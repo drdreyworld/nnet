@@ -1,5 +1,7 @@
 package nnet
 
 type Trainer interface {
-	Train(inputs, target *Data) *Data
+	SetNet(n NNet)
+	Activate(inputs, target *Data) *Data
+	UpdateWeights()
 }

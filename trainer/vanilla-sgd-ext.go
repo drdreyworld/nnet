@@ -31,12 +31,16 @@ func (t *VanillaSGDExt) InitGradients() {
 	}
 }
 
-func (t *VanillaSGDExt) Train(inputs, target *nnet.Data) *nnet.Data {
+func (t *VanillaSGDExt) Activate(inputs, target *nnet.Data) *nnet.Data {
 	t.Output = t.Network.Activate(inputs)
 	t.Deltas = t.Network.GetOutputDeltas(target, t.Output)
 
 	t.Network.Backprop(t.Deltas)
 
+	return t.Output
+}
+
+func (t *VanillaSGDExt) UpdateWeights() {
 	if len(t.Gradients) == 0 {
 		t.InitGradients()
 	}
@@ -66,6 +70,4 @@ func (t *VanillaSGDExt) Train(inputs, target *nnet.Data) *nnet.Data {
 			layer.ResetGradients()
 		}
 	}
-
-	return t.Output
 }

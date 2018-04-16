@@ -22,15 +22,14 @@ func (reg LayerRegistry) Create(key string) (Layer, error) {
 type Layer interface {
 	Init(cfg LayerConfig) (err error)
 	InitDataSizes(w, h, d int) (int, int, int)
-	Activate(inputs *Mem) (output *Mem)
-	Backprop(deltas *Mem) (nextDeltas *Mem)
+	Activate(inputs *Data) (output *Data)
+	Backprop(deltas *Data) (nextDeltas *Data)
 	Serialize() LayerConfig
-	UnmarshalConfigDataFromJSON(b []byte) (interface{}, error)
-	GetOutput() *Mem
+	GetOutput() *Data
 }
 
 type TrainableLayer interface {
 	ResetGradients()
-	GetWeightsWithGradient() (w, g *Mem)
-	GetBiasesWithGradient() (w, g *Mem)
+	GetWeightsWithGradient() (w, g *Data)
+	GetBiasesWithGradient() (w, g *Data)
 }

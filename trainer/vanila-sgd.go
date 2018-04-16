@@ -5,15 +5,15 @@ import "github.com/drdreyworld/nnet"
 type VanilaSGD struct {
 	Network  nnet.NNet
 	Learning float64
-	Output   *nnet.Mem
-	Deltas   *nnet.Mem
+	Output   *nnet.Data
+	Deltas   *nnet.Data
 }
 
 func (t *VanilaSGD) SetNet(n nnet.NNet) {
 	t.Network = n
 }
 
-func (t *VanilaSGD) Train(inputs, target *nnet.Mem) {
+func (t *VanilaSGD) Train(inputs, target *nnet.Data) {
 	t.Output = t.Network.Activate(inputs)
 	t.Deltas = t.Network.GetOutputDeltas(target, t.Output)
 

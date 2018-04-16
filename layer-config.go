@@ -1,38 +1,30 @@
 package nnet
 
-import (
-	"encoding/json"
-)
-
-var Configs = map[string]interface{}{}
-
-type LayerConfigs []LayerConfig
-
 type LayerConfig struct {
 	Type string
-	Data interface{}
+	Data LayerConfigData
 }
 
-func (c *LayerConfig) UnmarshalJSON(b []byte) (err error) {
-	cfg := struct {
-		Type string
-		Data *json.RawMessage
-	}{}
+type LayerConfigData map[string]interface{}
 
-	if err = json.Unmarshal(b, &cfg); err != nil {
-		return err
+func (d LayerConfigData) Exists(key string) bool {
+	_, ok := d[key]
+	return ok
+}
+
+func (d LayerConfigData) Int(key string) int {
+	// after json unmarshaling all nums is float64 :/
+	if v, ok := d[key].(float64); ok {
+		return int(v)
 	}
 
-	l, err := Layers.Create(cfg.Type)
-	if err != nil {
-		return err
-	}
+	return d[key].(int)
+}
 
-	c.Type = cfg.Type
+func (d LayerConfigData) Float64(key string) float64 {
+	return d[key].(float64)
+}
 
-	if cfg.Data != nil {
-		c.Data, err = l.UnmarshalConfigDataFromJSON(*cfg.Data)
-	}
-
-	return
+func (d LayerConfigData) String(key string) string {
+	return d[key].(string)
 }

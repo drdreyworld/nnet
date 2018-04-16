@@ -1,13 +1,10 @@
 package layer
 
 import (
-	"encoding/json"
-	"errors"
-	"fmt"
+	"github.com/drdreyworld/nnet"
 	"math"
 	"math/rand"
 	"time"
-	"github.com/drdreyworld/nnet"
 )
 
 const LAYER_CONV = "conv"
@@ -21,70 +18,52 @@ func ConvLayerConstructor() nnet.Layer {
 }
 
 type Conv struct {
-	iWidth  int
-	iHeight int
-	iDepth  int
-
-	oWidth  int
-	oHeight int
-	oDepth  int
+	iWidth, iHeight, iDepth int
+	oWidth, oHeight, oDepth int
 
 	fwidth  int
 	fheight int
 
-	outDepth int
-
 	fpadding int
 	fstride  int
 
-	MWeights *nnet.Mem
-	MOutput  *nnet.Mem
-	MInputs  *nnet.Mem
-	MBiases  *nnet.Mem
+	weights *nnet.Data
+	inputs  *nnet.Data
+	output  *nnet.Data
+	biases  *nnet.Data
 
-	MGradWeights *nnet.Mem
-	MGradBiases  *nnet.Mem
-	MGradInputs  *nnet.Mem
+	gradWeights *nnet.Data
+	gradBiases  *nnet.Data
+	gradInputs  *nnet.Data
 }
 
 func (l *Conv) Init(config nnet.LayerConfig) (err error) {
+	l.output = &nnet.Data{}
+	l.gradWeights = &nnet.Data{}
+	l.gradBiases = &nnet.Data{}
+	l.gradInputs = &nnet.Data{}
 
-	l.MWeights = &nnet.Mem{}
-	l.MOutput = &nnet.Mem{}
-	l.MBiases = &nnet.Mem{}
+	l.fwidth = config.Data.Int("FWidth")
+	l.fheight = config.Data.Int("FHeight")
+	l.oDepth = config.Data.Int("FDepth")
 
-	l.MGradWeights = &nnet.Mem{}
-	l.MGradBiases = &nnet.Mem{}
-	l.MGradInputs = &nnet.Mem{}
-
-	if config.Data == nil {
-		return errors.New("Config data is missed")
-	}
-
-	c, ok := config.Data.(ConvConfig)
-	if !ok {
-		return errors.New("Invalid config for Conv layer")
-	}
-
-	if err = c.Check(); err != nil {
-		return
-	}
-
-	l.fwidth = c.FWidth
-	l.fheight = c.FHeight
-
-	l.outDepth = c.OutDepth
-
-	l.fpadding = c.Padding
-	l.fstride = c.Stride
+	l.fpadding = config.Data.Int("Padding")
+	l.fstride = config.Data.Int("Stride")
 
 	if l.fstride < 1 {
 		l.fstride = 1
 	}
 
-	if len(c.Weights.Data) > 0 {
-		l.MWeights = &c.Weights
-		l.MBiases = &c.Biases
+	if w, ok := config.Data["Weights"].(nnet.Data); ok {
+		l.weights = &w
+	} else {
+		l.weights = &nnet.Data{}
+	}
+
+	if w, ok := config.Data["Biases"].(nnet.Data); ok {
+		l.biases = &w
+	} else {
+		l.biases = &nnet.Data{}
 	}
 
 	return
@@ -95,31 +74,26 @@ func (l *Conv) InitDataSizes(w, h, d int) (int, int, int) {
 
 	l.oWidth = (l.iWidth-l.fwidth+2*l.fpadding)/l.fstride + 1
 	l.oHeight = (l.iHeight-l.fheight+2*l.fpadding)/l.fstride + 1
-	l.oDepth = l.outDepth
 
-	l.MOutput.InitTensor(l.oWidth, l.oHeight, l.oDepth)
+	l.output.InitCube(l.oWidth, l.oHeight, l.oDepth)
 
-	if len(l.MWeights.Data) == 0 {
+	if len(l.weights.Data) == 0 {
 		rand.Seed(time.Now().UnixNano())
-		maxWeight := math.Sqrt(1.0 / float64(l.fwidth*l.fheight*l.outDepth*l.iDepth))
+		maxWeight := math.Sqrt(1.0 / float64(l.fwidth*l.fheight*l.oDepth*l.iDepth))
 
-		l.MWeights.InitTensorRandom(l.fwidth, l.fheight, l.outDepth*l.iDepth, -maxWeight, maxWeight)
-		l.MBiases.InitVector(l.outDepth)
+		l.weights.InitTensorRandom(l.fwidth, l.fheight, l.oDepth*l.iDepth, -maxWeight, maxWeight)
+		l.biases.InitVector(l.oDepth)
 	}
 
-	l.MGradBiases.InitVector(l.outDepth)
-	l.MGradWeights.InitTensor(l.fwidth, l.fheight, l.iDepth*l.outDepth)
-	l.MGradInputs.InitTensor(l.iWidth, l.iHeight, l.iDepth)
-
-	fmt.Println("conv inputs params:", l.iWidth, l.iHeight, l.iDepth)
-	fmt.Println("conv output params:", l.oWidth, l.oHeight, l.oDepth)
+	l.gradBiases.InitVector(l.oDepth)
+	l.gradWeights.InitCube(l.fwidth, l.fheight, l.iDepth*l.oDepth)
+	l.gradInputs.InitCube(l.iWidth, l.iHeight, l.iDepth)
 
 	return l.oWidth, l.oHeight, l.oDepth
 }
 
-func (l *Conv) Activate(inputs *nnet.Mem) *nnet.Mem {
-	// inputs is readonly for layer
-	l.MInputs = inputs
+func (l *Conv) Activate(inputs *nnet.Data) *nnet.Data {
+	l.inputs = inputs
 
 	outXYZ := 0
 	iSquare := l.iWidth * l.iHeight
@@ -131,7 +105,7 @@ func (l *Conv) Activate(inputs *nnet.Mem) *nnet.Mem {
 		for oy, initInputY := 0, -l.fpadding; oy < l.oHeight; oy, initInputY = oy+1, initInputY+l.fstride {
 			for ox, initInputX := 0, -l.fpadding; ox < l.oWidth; ox, initInputX = ox+1, initInputX+l.fstride {
 
-				l.MOutput.Data[outXYZ] = l.MBiases.Data[fi]
+				l.output.Data[outXYZ] = l.biases.Data[fi]
 
 				for fy, iy := 0, initInputY; fy < l.fheight; fy, iy = fy+1, iy+1 {
 					for fx, ix := 0, initInputX; iy > -1 && iy < l.iHeight && fx < l.fwidth; fx, ix = fx+1, ix+1 {
@@ -139,7 +113,7 @@ func (l *Conv) Activate(inputs *nnet.Mem) *nnet.Mem {
 							inXYZ := iz*iSquare + iy*l.iWidth + ix
 							wtXYZ := wi + iz*wSquare + fy*l.fwidth + fx
 
-							l.MOutput.Data[outXYZ] += l.MWeights.Data[wtXYZ] * l.MInputs.Data[inXYZ]
+							l.output.Data[outXYZ] += l.weights.Data[wtXYZ] * l.inputs.Data[inXYZ]
 						}
 					}
 				}
@@ -149,12 +123,11 @@ func (l *Conv) Activate(inputs *nnet.Mem) *nnet.Mem {
 		}
 	}
 
-	// output is readonly for next layer
-	return l.MOutput
+	return l.output
 }
 
-func (l *Conv) Backprop(deltas *nnet.Mem) *nnet.Mem {
-	weights := l.MWeights.RotateTensorMatrixes()
+func (l *Conv) Backprop(deltas *nnet.Data) *nnet.Data {
+	weights := l.weights.RotateTensorMatrixes()
 
 	outXYZ := 0
 	iSquare := l.iWidth * l.iHeight
@@ -166,15 +139,15 @@ func (l *Conv) Backprop(deltas *nnet.Mem) *nnet.Mem {
 		for oy, initInputY := 0, -l.fpadding; oy < l.oHeight; oy, initInputY = oy+1, initInputY+l.fstride {
 			for ox, initInputX := 0, -l.fpadding; ox < l.oWidth; ox, initInputX = ox+1, initInputX+l.fstride {
 
-				l.MGradBiases.Data[fi] += deltas.Data[outXYZ]
+				l.gradBiases.Data[fi] += deltas.Data[outXYZ]
 
 				for fy, iy := 0, initInputY; fy < l.fheight; fy, iy = fy+1, iy+1 {
 					for fx, ix := 0, initInputX; iy > -1 && iy < l.iHeight && fx < l.fwidth; fx, ix = fx+1, ix+1 {
 						for iz := 0; ix > -1 && ix < l.iWidth && iz < l.iDepth; iz++ {
 							inXYZ := iz*iSquare + iy*l.iWidth + ix
 							wtXYZ := wi + iz*wSquare + fy*l.fwidth + fx
-							l.MGradInputs.Data[inXYZ] += weights.Data[wtXYZ] * deltas.Data[outXYZ]
-							l.MGradWeights.Data[wtXYZ] += l.MInputs.Data[inXYZ] * deltas.Data[outXYZ]
+							l.gradInputs.Data[inXYZ] += weights.Data[wtXYZ] * deltas.Data[outXYZ]
+							l.gradWeights.Data[wtXYZ] += l.inputs.Data[inXYZ] * deltas.Data[outXYZ]
 						}
 					}
 				}
@@ -184,51 +157,44 @@ func (l *Conv) Backprop(deltas *nnet.Mem) *nnet.Mem {
 		}
 	}
 
-	return l.MGradInputs
+	return l.gradInputs
 }
 
 func (l *Conv) Serialize() (res nnet.LayerConfig) {
 	res.Type = LAYER_CONV
-	res.Data = ConvConfig{
-		FWidth:  l.fwidth,
-		FHeight: l.fheight,
+	res.Data = nnet.LayerConfigData{
+		"FWidth":  l.fwidth,
+		"FHeight": l.fheight,
+		"FDepth":  l.oDepth,
+		"Padding": l.fpadding,
+		"Stride":  l.fstride,
+	}
 
-		OutDepth: l.outDepth,
-
-		Padding: l.fpadding,
-		Stride:  l.fstride,
-
-		Weights: *l.MWeights,
-		Biases:  *l.MBiases,
+	if l.weights != nil {
+		res.Data["Weights"] = *l.weights
+		res.Data["Biases"] = *l.biases
 	}
 	return
 }
 
-func (l *Conv) UnmarshalConfigDataFromJSON(b []byte) (interface{}, error) {
-	cfg := ConvConfig{}
-	err := json.Unmarshal(b, &cfg)
-
-	return cfg, err
+func (l *Conv) GetWeights() *nnet.Data {
+	return l.weights
 }
 
-func (l *Conv) GetWeights() *nnet.Mem {
-	return l.MWeights
-}
-
-func (l *Conv) GetOutput() *nnet.Mem {
-	return l.MOutput
+func (l *Conv) GetOutput() *nnet.Data {
+	return l.output
 }
 
 func (l *Conv) ResetGradients() {
-	l.MGradBiases.Fill(0)
-	l.MGradWeights.Fill(0)
-	l.MGradInputs.Fill(0)
+	l.gradBiases.Fill(0)
+	l.gradWeights.Fill(0)
+	l.gradInputs.Fill(0)
 }
 
-func (l *Conv) GetWeightsWithGradient() (*nnet.Mem, *nnet.Mem) {
-	return l.MWeights, l.MGradWeights
+func (l *Conv) GetWeightsWithGradient() (*nnet.Data, *nnet.Data) {
+	return l.weights, l.gradWeights
 }
 
-func (l *Conv) GetBiasesWithGradient() (*nnet.Mem, *nnet.Mem) {
-	return l.MBiases, l.MGradBiases
+func (l *Conv) GetBiasesWithGradient() (*nnet.Data, *nnet.Data) {
+	return l.biases, l.gradBiases
 }

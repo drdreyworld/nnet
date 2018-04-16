@@ -1,9 +1,6 @@
 package layer
 
 import (
-	"encoding/json"
-	"errors"
-	"fmt"
 	"github.com/drdreyworld/nnet"
 )
 
@@ -18,48 +15,32 @@ func PoolingLayerConstructor() nnet.Layer {
 }
 
 type Pooling struct {
-	iWidth  int
-	iHeight int
-	iDepth  int
+	iWidth, iHeight, iDepth int
+	oWidth, oHeight, oDepth int
 
-	oWidth  int
-	oHeight int
-	oDepth  int
+	fwidth  int
+	fheight int
 
-	fwidth   int
-	fheight  int
 	fstride  int
 	fpadding int
 
-	inputs *nnet.Mem
-	output *nnet.Mem
+	inputs *nnet.Data
+	output *nnet.Data
 }
 
 func (l *Pooling) Init(config nnet.LayerConfig) (err error) {
-	l.inputs = &nnet.Mem{}
-	l.output = &nnet.Mem{}
+	l.inputs = &nnet.Data{}
+	l.output = &nnet.Data{}
 
-	if config.Data == nil {
-		return errors.New("Config data is missed")
+	l.fwidth = config.Data.Int("FWidth")
+	l.fheight = config.Data.Int("FHeight")
+	l.fstride = config.Data.Int("Stride")
+	l.fpadding = config.Data.Int("Padding")
+
+	if l.fstride < 1 {
+		l.fstride = 1
 	}
 
-	c, ok := config.Data.(PoolingConfig)
-	if ok {
-		if err = c.Check(); err != nil {
-			return
-		}
-
-		l.fwidth = c.FWidth
-		l.fheight = c.FHeight
-		l.fstride = c.Stride
-		l.fpadding = c.Padding
-
-		if l.fstride == 0 {
-			l.fstride = 1
-		}
-	} else {
-		err = errors.New("Invalid config for Pooling layer")
-	}
 	return
 }
 
@@ -70,15 +51,12 @@ func (l *Pooling) InitDataSizes(w, h, d int) (int, int, int) {
 	l.oHeight = (l.iHeight-l.fheight+2*l.fpadding)/l.fstride + 1
 	l.oDepth = l.iDepth
 
-	l.output.InitTensor(l.oWidth, l.oHeight, l.oDepth)
-
-	fmt.Println("pooling output params:", l.oWidth, l.oHeight, l.oDepth)
+	l.output.InitCube(l.oWidth, l.oHeight, l.oDepth)
 
 	return l.oWidth, l.oHeight, l.oDepth
 }
 
-func (l *Pooling) Activate(inputs *nnet.Mem) *nnet.Mem {
-	// inputs is readonly for layer
+func (l *Pooling) Activate(inputs *nnet.Data) *nnet.Data {
 	l.inputs = inputs
 
 	wW, wH := l.fwidth, l.fheight
@@ -106,12 +84,10 @@ func (l *Pooling) Activate(inputs *nnet.Mem) *nnet.Mem {
 			}
 		}
 	}
-
-	// output is readonly for next layer
 	return l.output
 }
 
-func (l *Pooling) Backprop(deltas *nnet.Mem) (gradient *nnet.Mem) {
+func (l *Pooling) Backprop(deltas *nnet.Data) (gradient *nnet.Data) {
 	gradient = l.inputs.CopyZero()
 
 	wW, wH := l.fwidth, l.fheight
@@ -147,22 +123,15 @@ func (l *Pooling) Backprop(deltas *nnet.Mem) (gradient *nnet.Mem) {
 
 func (l *Pooling) Serialize() (res nnet.LayerConfig) {
 	res.Type = LAYER_POOLING
-	res.Data = PoolingConfig{
-		FWidth:  l.fwidth,
-		FHeight: l.fheight,
-		Stride:  l.fstride,
-		Padding: l.fpadding,
+	res.Data = nnet.LayerConfigData{
+		"FWidth":  l.fwidth,
+		"FHeight": l.fheight,
+		"Stride":  l.fstride,
+		"Padding": l.fpadding,
 	}
 	return
 }
 
-func (l *Pooling) UnmarshalConfigDataFromJSON(b []byte) (interface{}, error) {
-	cfg := PoolingConfig{}
-	err := json.Unmarshal(b, &cfg)
-
-	return cfg, err
-}
-
-func (l *Pooling) GetOutput() *nnet.Mem {
+func (l *Pooling) GetOutput() *nnet.Data {
 	return l.output
 }

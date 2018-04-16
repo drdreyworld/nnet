@@ -1,66 +1,73 @@
 package nnet
 
-import "math/rand"
+import (
+	"math/rand"
+	"encoding/gob"
+)
 
-type Mem struct {
+func init() {
+	gob.Register(Data{})
+}
+
+type Data struct {
 	Dims []int
 	Data []float64
 }
 
-func (m *Mem) InitVector(w int) {
+func (m *Data) InitVector(w int) {
 	m.Dims = []int{w}
 	m.Data = make([]float64, w)
 }
 
-func (m *Mem) Fill(v float64) {
+func (m *Data) Fill(v float64) {
 	for i := 0; i < len(m.Data); i++ {
 		m.Data[i] = v
 	}
 }
 
-func (m *Mem) InitVectorRandom(w int, min, max float64) {
+func (m *Data) InitVectorRandom(w int, min, max float64) {
 	m.InitVector(w)
 	m.FillRandom(min, max)
 }
 
-func (m *Mem) InitMatrix(w, h int) {
+func (m *Data) InitMatrix(w, h int) {
 	m.Dims = []int{w, h}
 	m.Data = make([]float64, w*h)
 }
 
-func (m *Mem) InitMatrixRandom(w, h int, min, max float64) {
+func (m *Data) InitMatrixRandom(w, h int, min, max float64) {
 	m.InitMatrix(w, h)
 	m.FillRandom(min, max)
 }
 
-func (m *Mem) InitTensor(w, h, d int) {
+func (m *Data) InitCube(w, h, d int) {
 	m.Dims = []int{w, h, d}
 	m.Data = make([]float64, w*h*d)
 }
 
-func (m *Mem) InitTensorRandom(w, h, d int, min, max float64) {
-	m.InitTensor(w, h, d)
+func (m *Data) InitTensorRandom(w, h, d int, min, max float64) {
+	m.InitCube(w, h, d)
 	m.FillRandom(min, max)
 }
 
-func (m *Mem) InitHiperCube(w, h, d, t int) {
+func (m *Data) InitHiperCube(w, h, d, t int) {
 	m.Dims = []int{w, h, d, t}
 	m.Data = make([]float64, w*h*d*t)
 }
 
-func (m *Mem) InitHiperCubeRandom(w, h, d, t int, min, max float64) {
+func (m *Data) InitHiperCubeRandom(w, h, d, t int, min, max float64) {
 	m.InitHiperCube(w, h, d, t)
 	m.FillRandom(min, max)
 }
 
-func (m *Mem) FillRandom(min, max float64) {
+func (m *Data) FillRandom(min, max float64) {
 	for i := 0; i < len(m.Data); i++ {
 		m.Data[i] = min + (max-min)*rand.Float64()
 	}
 }
 
-func (m Mem) CopyZero() (r *Mem) {
-	r = &Mem{}
+func (m Data) CopyZero() (r *Data) {
+	r = &Data{}
 	r.Dims = make([]int, len(m.Dims))
 	r.Data = make([]float64, len(m.Data))
 	copy(r.Dims, m.Dims) // copy struct
@@ -68,13 +75,13 @@ func (m Mem) CopyZero() (r *Mem) {
 	return
 }
 
-func (m Mem) Copy() (r *Mem) {
+func (m Data) Copy() (r *Data) {
 	r = m.CopyZero()
 	copy(r.Data, m.Data)
 	return
 }
 
-func (m Mem) RotateTensorMatrixes() (r *Mem) {
+func (m Data) RotateTensorMatrixes() (r *Data) {
 	r = m.CopyZero()
 
 	w, h, d := m.Dims[0], m.Dims[1], m.Dims[2]

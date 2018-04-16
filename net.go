@@ -1,95 +1,64 @@
 package nnet
 
 import (
-	"encoding/json"
 	"errors"
-	"fmt"
-	"io/ioutil"
 	"math"
-	"os"
-	"sync"
 )
 
 type NNet interface {
-	Activate(inputs *Mem) (output *Mem)
-	Backprop(deltas *Mem) (gradient *Mem)
-	GetOutputDeltas(target, output *Mem) (res *Mem)
+	Init(cfg NetConfig) error
+	Activate(inputs *Data) (output *Data)
+	Backprop(deltas *Data) (gradient *Data)
+	GetOutputDeltas(target, output *Data) (res *Data)
 	GetLayersCount() int
 	GetLayer(index int) Layer
+
+	Serialize() NetConfig
 }
+
+const ERR_NET_STORAGE_NOT_INITIALIZED = "storage instance not set"
 
 type Net struct {
-	IWidth  int
-	IHeight int
-	IDepth  int
+	IWidth, IHeight, IDepth int
+	OWidth, OHeight, ODepth int
 
-	OWidth  int
-	OHeight int
-	ODepth  int
-
-	layers   []Layer
-	filename string
-
-	sync.Mutex
-	locked bool
+	layers  []Layer
+	Storage NetStorage
 }
 
-func (n *Net) Init(cfg interface{}) (err error) {
-	c, err := CreateNetConfig(cfg)
+func (n *Net) Init(cfg NetConfig) (err error) {
+	n.layers, err = cfg.CreateLayers()
 	if err != nil {
-		panic(err)
 		return
 	}
 
-	n.filename = c.Filename
+	n.IWidth, n.IHeight, n.IDepth = cfg.IWidth, cfg.IHeight, cfg.IDepth
+	n.OWidth, n.OHeight, n.ODepth = cfg.IWidth, cfg.IHeight, cfg.IDepth
 
-	for _, v := range c.Layers {
-		var l Layer
-
-		l, err = Layers.Create(v.Type)
-		if err != nil {
-			panic(err)
-			return
-		}
-
-		if err = l.Init(v); err != nil {
-			panic(err)
-			return
-		}
-
-		n.layers = append(n.layers, l)
+	for i := 0; i < len(n.layers); i++ {
+		n.OWidth, n.OHeight, n.ODepth = n.layers[i].InitDataSizes(n.OWidth, n.OHeight, n.ODepth)
 	}
-
-	n.IWidth, n.IHeight, n.IDepth = c.IWidth, c.IHeight, c.IDepth
-	n.OWidth, n.OHeight, n.ODepth = n.initDataSizes(n.IWidth, n.IHeight, n.IDepth)
 
 	return
 }
 
-func (n *Net) initDataSizes(w, h, d int) (int, int, int) {
-	fmt.Println("layers count: ", len(n.layers))
-	for i := 0; i < len(n.layers); i++ {
-		fmt.Println("### initDataSizes for layer ", i)
-		w, h, d = n.layers[i].InitDataSizes(w, h, d)
-	}
-	return w, h, d
-}
-
-func (n *Net) SetFilename(filename string) {
-	n.filename = filename
-}
-
-func (n *Net) Activate(inputs *Mem) *Mem {
-	n.Lock()
-	defer n.Unlock()
-
+func (n *Net) Activate(inputs *Data) *Data {
 	for i := 0; i < len(n.layers); i++ {
 		inputs = n.layers[i].Activate(inputs)
 	}
 	return inputs
 }
 
-func (n *Net) GetOutputDeltas(target, output *Mem) (res *Mem) {
+func (n *Net) Backprop(deltas *Data) (gradient *Data) {
+	gradient = deltas.Copy()
+
+	for i := len(n.layers) - 1; i >= 0; i-- {
+		gradient = n.layers[i].Backprop(gradient)
+	}
+	return gradient
+}
+
+func (n *Net) GetOutputDeltas(target, output *Data) (res *Data) {
 	res = target.CopyZero()
 	for i := 0; i < len(res.Data); i++ {
 		res.Data[i] = -(target.Data[i] - output.Data[i])
@@ -97,20 +66,7 @@ func (n *Net) GetOutputDeltas(target, output *Mem) (res *Mem) {
 	return
 }
 
-func (n *Net) Backprop(deltas *Mem) (gradient *Mem) {
-	n.Lock()
-	defer n.Unlock()
-
-	gradient = deltas.Copy()
-
-	for i := len(n.layers) - 1; i >= 0; i-- {
-		gradient = n.layers[i].Backprop(gradient)
-	}
-
-	return gradient
-}
-
-func (n *Net) GetLossClassification(target, result *Mem) (res float64) {
+func (n *Net) GetLossClassification(target, result *Data) (res float64) {
 	for i := 0; i < len(target.Data); i++ {
 		if target.Data[i] == 1 {
 			return -math.Log(result.Data[i])
@@ -119,7 +75,7 @@ func (n *Net) GetLossClassification(target, result *Mem) (res float64) {
 	return 0
 }
 
-func (n *Net) GetLossRegression(target, result *Mem) (res float64) {
+func (n *Net) GetLossRegression(target, result *Data) (res float64) {
 	for i := 0; i < len(target.Data); i++ {
 		res += math.Pow(result.Data[i]-target.Data[i], 2)
 	}
@@ -138,72 +94,18 @@ func (n *Net) Serialize() NetConfig {
 	return res
 }
 
-func (n *Net) setLocked() (res bool) {
-	n.Lock()
-
-	if res = !n.locked; res {
-		n.locked = true
+func (n *Net) Save() error {
+	if n.Storage != nil {
+		return n.Storage.Save(n)
 	}
-
-	n.Unlock()
-	return
+	return errors.New(ERR_NET_STORAGE_NOT_INITIALIZED)
 }
 
-func (n *Net) setUnLocked() (res bool) {
-	n.Lock()
-
-	if res = n.locked; res {
-		n.locked = false
+func (n *Net) Load() error {
+	if n.Storage != nil {
+		return n.Storage.Load(n)
 	}
-
-	n.Unlock()
-	return
-}
-
-func (n *Net) SaveConfig() (err error) {
-	n.Lock()
-	defer n.Unlock()
-
-	if len(n.filename) == 0 {
-		return errors.New("Net filename is not set")
-	}
-
-	d, err := json.Marshal(n.Serialize())
-	if err != nil {
-		return
-	}
-
-	f, err := os.Create(n.filename)
-	if err != nil {
-		return
-	}
-	defer f.Close()
-
-	_, err = f.Write(d)
-
-	return
-}
-
-func (n *Net) LoadConfig() (err error) {
-	n.Lock()
-	defer n.Unlock()
-
-	if len(n.filename) == 0 {
-		return errors.New("Net filename is not set")
-	}
-
-	d, err := ioutil.ReadFile(n.filename)
-	if err != nil {
-		return
-	}
-
-	c := NetConfig{}
-
-	if err = json.Unmarshal(d, &c); err == nil {
-		err = n.Init(c)
-	}
-
-	return
+	return errors.New(ERR_NET_STORAGE_NOT_INITIALIZED)
 }
 
 func (n *Net) GetLayersCount() int {

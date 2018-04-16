@@ -20,7 +20,6 @@ func (a *ActivationReLU) Forward(v float64) float64 {
 func (a *ActivationReLU) Backward(v float64) float64 {
 	if v <= 0 {
 		return 0
-		//return rand.Float64() / 1000
 	}
 	return 1
 }

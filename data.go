@@ -96,3 +96,16 @@ func (m Data) RotateTensorMatrixes() (r *Data) {
 	}
 	return
 }
+
+func (m Data) GetMinMaxValues(fromIndex, toIndex int) (min, max float64) {
+	min, max = m.Data[fromIndex], m.Data[fromIndex]
+	for i := fromIndex+1; i < toIndex; i++ {
+		if min > m.Data[i] {
+			min = m.Data[i]
+		}
+		if max < m.Data[i] {
+			max = m.Data[i]
+		}
+	}
+	return
+}

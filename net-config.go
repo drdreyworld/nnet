@@ -4,6 +4,8 @@ type NetConfig struct {
 	IWidth, IHeight, IDepth int
 	OWidth, OHeight, ODepth int
 
+	LossCode string
+
 	Layers []LayerConfig
 }
 

@@ -2,7 +2,6 @@ package nnet
 
 import (
 	"errors"
-	"math"
 )
 
 type NNet interface {
@@ -16,14 +15,18 @@ type NNet interface {
 	Serialize() NetConfig
 }
 
-const ERR_NET_STORAGE_NOT_INITIALIZED = "storage instance not set"
+const ERR_NET_NOT_SET_LOSS = "loss function not set"
+const ERR_NET_NOT_SET_STORAGE = "storage instance not set"
 
 type Net struct {
 	IWidth, IHeight, IDepth int
 	OWidth, OHeight, ODepth int
 
-	layers  []Layer
-	Storage NetStorage
+	LossFunc LossFunction
+	LossCode string
+
+	layers   []Layer
+	Storage  NetStorage
 }
 
 func (n *Net) Init(cfg NetConfig) (err error) {
@@ -31,6 +34,9 @@ func (n *Net) Init(cfg NetConfig) (err error) {
 	if err != nil {
 		return
 	}
+
+	n.LossCode = cfg.LossCode
+	n.LossFunc = LossRegistry[n.LossCode]
 
 	n.IWidth, n.IHeight, n.IDepth = cfg.IWidth, cfg.IHeight, cfg.IDepth
 	n.OWidth, n.OHeight, n.ODepth = cfg.IWidth, cfg.IHeight, cfg.IDepth
@@ -66,27 +72,13 @@ func (n *Net) GetOutputDeltas(target, output *Data) (res *Data) {
 	return
 }
 
-func (n *Net) GetLossClassification(target, result *Data) (res float64) {
-	for i := 0; i < len(target.Data); i++ {
-		if target.Data[i] == 1 {
-			return -math.Log(result.Data[i])
-		}
-	}
-	return 0
-}
-
-func (n *Net) GetLossRegression(target, result *Data) (res float64) {
-	for i := 0; i < len(target.Data); i++ {
-		res += math.Pow(result.Data[i]-target.Data[i], 2)
-	}
-	return 0.5 * res
-}
-
 func (n *Net) Serialize() NetConfig {
 	res := NetConfig{}
 
 	res.IWidth, res.IHeight, res.IDepth = n.IWidth, n.IHeight, n.IDepth
 	res.OWidth, res.OHeight, res.ODepth = n.OWidth, n.OHeight, n.ODepth
+
+	res.LossCode = n.LossCode
 
 	for i := 0; i < len(n.layers); i++ {
 		res.Layers = append(res.Layers, n.layers[i].Serialize())
@@ -94,18 +86,25 @@ func (n *Net) Serialize() NetConfig {
 	return res
 }
 
+func (n *Net) GetLoss(target, output *Data) (float64, error) {
+	if n.LossFunc == nil {
+		return 0, errors.New(ERR_NET_NOT_SET_LOSS)
+	}
+	return n.LossFunc(target, output), nil
+}
+
 func (n *Net) Save() error {
 	if n.Storage != nil {
 		return n.Storage.Save(n)
 	}
-	return errors.New(ERR_NET_STORAGE_NOT_INITIALIZED)
+	return errors.New(ERR_NET_NOT_SET_STORAGE)
 }
 
 func (n *Net) Load() error {
 	if n.Storage != nil {
 		return n.Storage.Load(n)
 	}
-	return errors.New(ERR_NET_STORAGE_NOT_INITIALIZED)
+	return errors.New(ERR_NET_NOT_SET_STORAGE)
 }
 
 func (n *Net) GetLayersCount() int {

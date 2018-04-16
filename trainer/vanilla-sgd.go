@@ -13,7 +13,7 @@ func (t *VanilaSGD) SetNet(n nnet.NNet) {
 	t.Network = n
 }
 
-func (t *VanilaSGD) Train(inputs, target *nnet.Data) {
+func (t *VanilaSGD) Train(inputs, target *nnet.Data) *nnet.Data {
 	t.Output = t.Network.Activate(inputs)
 	t.Deltas = t.Network.GetOutputDeltas(target, t.Output)
 
@@ -35,4 +35,6 @@ func (t *VanilaSGD) Train(inputs, target *nnet.Data) {
 			layer.ResetGradients()
 		}
 	}
+
+	return t.Output
 }

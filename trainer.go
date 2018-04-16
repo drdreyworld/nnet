@@ -1,5 +1,5 @@
 package nnet
 
 type Trainer interface {
-	Train(inputs, target Data)
+	Train(inputs, target *Data) *Data
 }

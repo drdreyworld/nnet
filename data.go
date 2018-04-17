@@ -75,7 +75,7 @@ func (m *Data) CopyZero() (r *Data) {
 	return
 }
 
-func (m *Data) Copy() (r *Data) {
+func (m Data) Copy() (r *Data) {
 	r = m.CopyZero()
 	copy(r.Data, m.Data)
 	return

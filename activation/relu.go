@@ -1,4 +1,4 @@
-package nn
+package activation
 
 import "github.com/drdreyworld/nnet"
 

@@ -9,17 +9,27 @@ import (
 )
 
 const ERR_FILE_FILENAME_NOT_SET = "storage filename not set"
+const ERR_FILE_NETWORK_NOT_SET = "storage network not set"
 
 type JsonFile struct {
+	Network nnet.NNet
 	Filename string
 }
 
-func (s *JsonFile) Save(n nnet.NNet) (err error) {
+func (s *JsonFile) SetNet(n nnet.NNet) {
+	s.Network = n
+}
+
+func (s *JsonFile) Save() (err error) {
+	if s.Network == nil {
+		return errors.New(ERR_FILE_NETWORK_NOT_SET)
+	}
+
 	if len(s.Filename) == 0 {
 		return errors.New(ERR_FILE_FILENAME_NOT_SET)
 	}
 
-	d, err := json.Marshal(n.Serialize())
+	d, err := json.Marshal(s.Network.Serialize())
 	if err != nil {
 		return
 	}
@@ -35,7 +45,11 @@ func (s *JsonFile) Save(n nnet.NNet) (err error) {
 	return
 }
 
-func (s *JsonFile) Load(n nnet.NNet) (err error) {
+func (s *JsonFile) Load() (err error) {
+	if s.Network == nil {
+		return errors.New(ERR_FILE_NETWORK_NOT_SET)
+	}
+
 	if len(s.Filename) == 0 {
 		return errors.New(ERR_FILE_FILENAME_NOT_SET)
 	}
@@ -48,7 +62,7 @@ func (s *JsonFile) Load(n nnet.NNet) (err error) {
 	c := nnet.NetConfig{}
 
 	if err = json.Unmarshal(d, &c); err == nil {
-		err = n.Init(c)
+		err = s.Network.Init(c)
 	}
 
 	return

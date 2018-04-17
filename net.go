@@ -16,7 +16,6 @@ type NNet interface {
 }
 
 const ERR_NET_NOT_SET_LOSS = "loss function not set"
-const ERR_NET_NOT_SET_STORAGE = "storage instance not set"
 
 type Net struct {
 	IWidth, IHeight, IDepth int
@@ -26,7 +25,6 @@ type Net struct {
 	LossCode string
 
 	layers   []Layer
-	Storage  NetStorage
 }
 
 func (n *Net) Init(cfg NetConfig) (err error) {
@@ -91,20 +89,6 @@ func (n *Net) GetLoss(target, output *Data) (float64, error) {
 		return 0, errors.New(ERR_NET_NOT_SET_LOSS)
 	}
 	return n.LossFunc(target, output), nil
-}
-
-func (n *Net) Save() error {
-	if n.Storage != nil {
-		return n.Storage.Save(n)
-	}
-	return errors.New(ERR_NET_NOT_SET_STORAGE)
-}
-
-func (n *Net) Load() error {
-	if n.Storage != nil {
-		return n.Storage.Load(n)
-	}
-	return errors.New(ERR_NET_NOT_SET_STORAGE)
 }
 
 func (n *Net) GetLayersCount() int {

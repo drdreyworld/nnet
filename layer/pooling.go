@@ -7,7 +7,7 @@ import (
 const LAYER_POOLING = "pooling"
 
 func init() {
-	nnet.Layers[LAYER_POOLING] = PoolingLayerConstructor
+	nnet.LayersRegistry[LAYER_POOLING] = PoolingLayerConstructor
 }
 
 func PoolingLayerConstructor() nnet.Layer {

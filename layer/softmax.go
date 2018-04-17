@@ -8,7 +8,7 @@ import (
 const LAYER_SOFTMAX = "softmax"
 
 func init() {
-	nnet.Layers[LAYER_SOFTMAX] = SoftmaxLayerConstructor
+	nnet.LayersRegistry[LAYER_SOFTMAX] = SoftmaxLayerConstructor
 }
 
 func SoftmaxLayerConstructor() nnet.Layer {

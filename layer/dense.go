@@ -10,7 +10,7 @@ import (
 const LAYER_DENSE = "dense"
 
 func init() {
-	nnet.Layers[LAYER_DENSE] = DenseLayerConstructor
+	nnet.LayersRegistry[LAYER_DENSE] = DenseLayerConstructor
 }
 
 func DenseLayerConstructor() nnet.Layer {

@@ -8,7 +8,7 @@ import (
 const ACTIVATION_SIGMOID = "sigmoid"
 
 func init() {
-	nnet.Activations[ACTIVATION_SIGMOID] = &ActivationSigmoid{}
+	nnet.ActivationsRegistry[ACTIVATION_SIGMOID] = &ActivationSigmoid{}
 }
 
 type ActivationSigmoid struct{}

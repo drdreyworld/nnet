@@ -8,7 +8,7 @@ import (
 const ACTIVATION_SOFTPLUS = "softplus"
 
 func init() {
-	nnet.Activations[ACTIVATION_SOFTPLUS] = &ActivationSoftPlus{}
+	nnet.ActivationsRegistry[ACTIVATION_SOFTPLUS] = &ActivationSoftPlus{}
 }
 
 type ActivationSoftPlus struct{}

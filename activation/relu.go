@@ -5,7 +5,7 @@ import "github.com/drdreyworld/nnet"
 const ACTIVATION_RELU = "relu"
 
 func init() {
-	nnet.Activations[ACTIVATION_RELU] = &ActivationReLU{}
+	nnet.ActivationsRegistry[ACTIVATION_RELU] = &ActivationReLU{}
 }
 
 type ActivationReLU struct{}

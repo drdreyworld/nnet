@@ -1,8 +1,8 @@
 package nnet
 
-var Activations = ActivationRegistry{}
+var ActivationsRegistry = activationsRegistry{}
 
-type ActivationRegistry map[string]Activation
+type activationsRegistry map[string]Activation
 
 type Activation interface {
 	Forward(v float64) float64

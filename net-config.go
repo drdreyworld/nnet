@@ -15,7 +15,7 @@ func (c *NetConfig) CreateLayers() (res []Layer, err error) {
 
 	for _, v := range c.Layers {
 
-		l, err = Layers.Create(v.Type)
+		l, err = LayersRegistry.Create(v.Type)
 		if err != nil {
 			return nil, err
 		}

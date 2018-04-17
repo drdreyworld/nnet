@@ -9,7 +9,7 @@ import (
 const ACTIVATION_ELU = "elu"
 
 func init() {
-	nnet.Activations[ACTIVATION_ELU] = &ActivationELU{}
+	nnet.ActivationsRegistry[ACTIVATION_ELU] = &ActivationELU{}
 }
 
 type ActivationELU struct{}

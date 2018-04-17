@@ -7,7 +7,7 @@ import (
 const LAYER_ACTIVATION = "activation"
 
 func init() {
-	nnet.Layers[LAYER_ACTIVATION] = ActivationConstructor
+	nnet.LayersRegistry[LAYER_ACTIVATION] = ActivationConstructor
 }
 
 func ActivationConstructor() nnet.Layer {
@@ -28,7 +28,7 @@ type Activation struct {
 
 func (l *Activation) Init(config nnet.LayerConfig) (err error) {
 	l.actCode = config.Data.String("ActCode")
-	l.actFunc = nnet.Activations[l.actCode]
+	l.actFunc = nnet.ActivationsRegistry[l.actCode]
 	l.output = &nnet.Data{}
 	return
 }

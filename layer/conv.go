@@ -10,7 +10,7 @@ import (
 const LAYER_CONV = "conv"
 
 func init() {
-	nnet.Layers[LAYER_CONV] = ConvLayerConstructor
+	nnet.LayersRegistry[LAYER_CONV] = ConvLayerConstructor
 }
 
 func ConvLayerConstructor() nnet.Layer {

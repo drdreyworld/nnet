@@ -1,5 +1,7 @@
 # nnet
 
+[![GoDoc](https://godoc.org/github.com/drdreyworld/nnet?status.svg)](https://godoc.org/github.com/drdreyworld/nnet)
+
 version: 0.0.1
 
 Extendable golang neural network library

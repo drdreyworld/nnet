@@ -1,7 +1,4 @@
-# nnet
-
-version: 0.0.1
-
+/*
 Extendable golang neural network library
 
 Now it can be used for construction feed forward networks (FC and CNN).
@@ -23,3 +20,5 @@ It is possible to create own:
 	- loss function
 	- trainer type
 	- storage type
+ */
+package nnet

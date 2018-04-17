@@ -1,8 +1,8 @@
 package nnet
 
 import (
-	"math/rand"
 	"encoding/gob"
+	"math/rand"
 )
 
 func init() {
@@ -14,15 +14,21 @@ type Data struct {
 	Data []float64
 }
 
-func (m *Data) InitVector(w int) {
-	m.Dims = []int{w}
-	m.Data = make([]float64, w)
-}
-
 func (m *Data) Fill(v float64) {
 	for i := 0; i < len(m.Data); i++ {
 		m.Data[i] = v
 	}
+}
+
+func (m *Data) FillRandom(min, max float64) {
+	for i := 0; i < len(m.Data); i++ {
+		m.Data[i] = min + (max-min)*rand.Float64()
+	}
+}
+
+func (m *Data) InitVector(w int) {
+	m.Dims = []int{w}
+	m.Data = make([]float64, w)
 }
 
 func (m *Data) InitVectorRandom(w int, min, max float64) {
@@ -45,7 +51,7 @@ func (m *Data) InitCube(w, h, d int) {
 	m.Data = make([]float64, w*h*d)
 }
 
-func (m *Data) InitTensorRandom(w, h, d int, min, max float64) {
+func (m *Data) InitCubeRandom(w, h, d int, min, max float64) {
 	m.InitCube(w, h, d)
 	m.FillRandom(min, max)
 }
@@ -60,13 +66,7 @@ func (m *Data) InitHiperCubeRandom(w, h, d, t int, min, max float64) {
 	m.FillRandom(min, max)
 }
 
-func (m *Data) FillRandom(min, max float64) {
-	for i := 0; i < len(m.Data); i++ {
-		m.Data[i] = min + (max-min)*rand.Float64()
-	}
-}
-
-func (m Data) CopyZero() (r *Data) {
+func (m *Data) CopyZero() (r *Data) {
 	r = &Data{}
 	r.Dims = make([]int, len(m.Dims))
 	r.Data = make([]float64, len(m.Data))
@@ -75,31 +75,32 @@ func (m Data) CopyZero() (r *Data) {
 	return
 }
 
-func (m Data) Copy() (r *Data) {
+func (m *Data) Copy() (r *Data) {
 	r = m.CopyZero()
 	copy(r.Data, m.Data)
 	return
 }
 
-func (m Data) RotateTensorMatrixes() (r *Data) {
-	r = m.CopyZero()
-
+func (m *Data) RotateMatrixesInCube() {
 	w, h, d := m.Dims[0], m.Dims[1], m.Dims[2]
 
+	l := w * h
+
 	for z := 0; z < d; z++ {
-		zs := z*w * h
-		for yc, yn := 0, h-1; yc < h; yc, yn = yc+1, yn-1 {
-			for xc, xn := 0, w-1; xc < w; xc, xn = xc+1, xn-1 {
-				r.Data[zs + yn*w + xn] = m.Data[zs + yc*w + xc]
-			}
-		}
+		m.Rotate(z*l, (z+1)*l)
 	}
 	return
 }
 
-func (m Data) GetMinMaxValues(fromIndex, toIndex int) (min, max float64) {
+func (m *Data) Rotate(from, to int) {
+	for i := 0; from+i < to-i-1; i++ {
+		m.Data[from+i], m.Data[to-i-1] = m.Data[to-i-1], m.Data[from+i]
+	}
+}
+
+func (m *Data) GetMinMaxValues(fromIndex, toIndex int) (min, max float64) {
 	min, max = m.Data[fromIndex], m.Data[fromIndex]
-	for i := fromIndex+1; i < toIndex; i++ {
+	for i := fromIndex + 1; i < toIndex; i++ {
 		if min > m.Data[i] {
 			min = m.Data[i]
 		}

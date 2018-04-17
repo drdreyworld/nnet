@@ -81,7 +81,7 @@ func (l *Conv) InitDataSizes(w, h, d int) (int, int, int) {
 		rand.Seed(time.Now().UnixNano())
 		maxWeight := math.Sqrt(1.0 / float64(l.fwidth*l.fheight*l.oDepth*l.iDepth))
 
-		l.weights.InitTensorRandom(l.fwidth, l.fheight, l.oDepth*l.iDepth, -maxWeight, maxWeight)
+		l.weights.InitCubeRandom(l.fwidth, l.fheight, l.oDepth*l.iDepth, -maxWeight, maxWeight)
 		l.biases.InitVector(l.oDepth)
 	}
 
@@ -127,7 +127,8 @@ func (l *Conv) Activate(inputs *nnet.Data) *nnet.Data {
 }
 
 func (l *Conv) Backprop(deltas *nnet.Data) *nnet.Data {
-	weights := l.weights.RotateTensorMatrixes()
+	weights := l.weights.Copy()
+	weights.RotateMatrixesInCube()
 
 	outXYZ := 0
 	iSquare := l.iWidth * l.iHeight

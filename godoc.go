@@ -3,8 +3,6 @@ Extendable golang neural network library
 
 Now it can be used for construction feed forward networks (FC and CNN).
 
-Can be used for construction feed forward networks (FC and CNN).
-
 Realized basic layer types:
 
 	- dense or fully connected layer

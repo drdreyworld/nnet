@@ -10,11 +10,25 @@ import (
 const LAYER_CONV = "conv"
 
 func init() {
-	nnet.LayersRegistry[LAYER_CONV] = ConvLayerConstructor
+	nnet.LayersRegistry[LAYER_CONV] = LayerConstructorConv
 }
 
-func ConvLayerConstructor() nnet.Layer {
-	return &Conv{}
+func LayerConfigConv(FWidth, FHeight, FDepth, FPadding, FStride int) (res nnet.LayerConfig) {
+	res.Type = LAYER_CONV
+	res.Data = nnet.LayerConfigData{
+		"FWidth":  FWidth,
+		"FHeight": FHeight,
+		"FDepth":  FDepth,
+		"Padding": FPadding,
+		"Stride":  FStride,
+	}
+	return
+}
+
+func LayerConstructorConv(cfg nnet.LayerConfig) (res nnet.Layer, err error) {
+	res = &Conv{}
+	err = res.Unserialize(cfg)
+	return
 }
 
 type Conv struct {
@@ -37,44 +51,13 @@ type Conv struct {
 	gradInputs  *nnet.Data
 }
 
-func (l *Conv) Init(config nnet.LayerConfig) (err error) {
-	l.output = &nnet.Data{}
-	l.gradWeights = &nnet.Data{}
-	l.gradBiases = &nnet.Data{}
-	l.gradInputs = &nnet.Data{}
-
-	l.fwidth = config.Data.Int("FWidth")
-	l.fheight = config.Data.Int("FHeight")
-	l.oDepth = config.Data.Int("FDepth")
-
-	l.fpadding = config.Data.Int("Padding")
-	l.fstride = config.Data.Int("Stride")
-
-	if l.fstride < 1 {
-		l.fstride = 1
-	}
-
-	if w, ok := config.Data["Weights"].(nnet.Data); ok {
-		l.weights = &w
-	} else {
-		l.weights = &nnet.Data{}
-	}
-
-	if w, ok := config.Data["Biases"].(nnet.Data); ok {
-		l.biases = &w
-	} else {
-		l.biases = &nnet.Data{}
-	}
-
-	return
-}
-
 func (l *Conv) InitDataSizes(w, h, d int) (int, int, int) {
 	l.iWidth, l.iHeight, l.iDepth = w, h, d
 
 	l.oWidth = (l.iWidth-l.fwidth+2*l.fpadding)/l.fstride + 1
 	l.oHeight = (l.iHeight-l.fheight+2*l.fpadding)/l.fstride + 1
 
+	l.output = &nnet.Data{}
 	l.output.InitCube(l.oWidth, l.oHeight, l.oDepth)
 
 	if len(l.weights.Data) == 0 {
@@ -85,8 +68,13 @@ func (l *Conv) InitDataSizes(w, h, d int) (int, int, int) {
 		l.biases.InitVector(l.oDepth)
 	}
 
+	l.gradBiases = &nnet.Data{}
 	l.gradBiases.InitVector(l.oDepth)
+
+	l.gradWeights = &nnet.Data{}
 	l.gradWeights.InitCube(l.fwidth, l.fheight, l.iDepth*l.oDepth)
+
+	l.gradInputs = &nnet.Data{}
 	l.gradInputs.InitCube(l.iWidth, l.iHeight, l.iDepth)
 
 	return l.oWidth, l.oHeight, l.oDepth
@@ -161,20 +149,32 @@ func (l *Conv) Backprop(deltas *nnet.Data) *nnet.Data {
 	return l.gradInputs
 }
 
-func (l *Conv) Serialize() (res nnet.LayerConfig) {
-	res.Type = LAYER_CONV
-	res.Data = nnet.LayerConfigData{
-		"FWidth":  l.fwidth,
-		"FHeight": l.fheight,
-		"FDepth":  l.oDepth,
-		"Padding": l.fpadding,
-		"Stride":  l.fstride,
-	}
 
-	if l.weights != nil {
-		res.Data["Weights"] = *l.weights
-		res.Data["Biases"] = *l.biases
+func (l *Conv) Unserialize(cfg nnet.LayerConfig) (err error) {
+	if err = cfg.CheckType(LAYER_CONV); err == nil {
+		l.fwidth = cfg.Data.Int("FWidth")
+		l.fheight = cfg.Data.Int("FHeight")
+		l.oDepth = cfg.Data.Int("FDepth")
+
+		l.fpadding = cfg.Data.Int("Padding")
+		l.fstride = cfg.Data.Int("Stride")
+
+		if l.fstride < 1 {
+			l.fstride = 1
+		}
+
+		l.weights = cfg.Data.GetWeights()
+		l.biases = cfg.Data.GetBiases()
 	}
+	return
+}
+
+
+func (l *Conv) Serialize() (res nnet.LayerConfig) {
+	res = LayerConfigConv(l.fwidth, l.fheight, l.oDepth, l.fpadding, l.fstride)
+	res.Data.SetWeights(l.weights)
+	res.Data.SetBiases(l.biases)
+
 	return
 }
 

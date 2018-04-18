@@ -7,11 +7,24 @@ import (
 const LAYER_POOLING = "pooling"
 
 func init() {
-	nnet.LayersRegistry[LAYER_POOLING] = PoolingLayerConstructor
+	nnet.LayersRegistry[LAYER_POOLING] = LayerConstructorPooling
 }
 
-func PoolingLayerConstructor() nnet.Layer {
-	return &Pooling{}
+func LayerConfigPooling(FWidth, FHeight, FPadding, FStride int) (res nnet.LayerConfig) {
+	res.Type = LAYER_POOLING
+	res.Data = nnet.LayerConfigData{
+		"FWidth":  FWidth,
+		"FHeight": FHeight,
+		"Padding": FPadding,
+		"Stride":  FStride,
+	}
+	return
+}
+
+func LayerConstructorPooling(cfg nnet.LayerConfig) (res nnet.Layer, err error) {
+	res = &Pooling{}
+	err = res.Unserialize(cfg)
+	return
 }
 
 type Pooling struct {
@@ -28,22 +41,6 @@ type Pooling struct {
 	output *nnet.Data
 }
 
-func (l *Pooling) Init(config nnet.LayerConfig) (err error) {
-	l.inputs = &nnet.Data{}
-	l.output = &nnet.Data{}
-
-	l.fwidth = config.Data.Int("FWidth")
-	l.fheight = config.Data.Int("FHeight")
-	l.fstride = config.Data.Int("Stride")
-	l.fpadding = config.Data.Int("Padding")
-
-	if l.fstride < 1 {
-		l.fstride = 1
-	}
-
-	return
-}
-
 func (l *Pooling) InitDataSizes(w, h, d int) (int, int, int) {
 	l.iWidth, l.iHeight, l.iDepth = w, h, d
 
@@ -51,6 +48,7 @@ func (l *Pooling) InitDataSizes(w, h, d int) (int, int, int) {
 	l.oHeight = (l.iHeight-l.fheight+2*l.fpadding)/l.fstride + 1
 	l.oDepth = l.iDepth
 
+	l.output = &nnet.Data{}
 	l.output.InitCube(l.oWidth, l.oHeight, l.oDepth)
 
 	return l.oWidth, l.oHeight, l.oDepth
@@ -121,15 +119,22 @@ func (l *Pooling) Backprop(deltas *nnet.Data) (gradient *nnet.Data) {
 	return
 }
 
-func (l *Pooling) Serialize() (res nnet.LayerConfig) {
-	res.Type = LAYER_POOLING
-	res.Data = nnet.LayerConfigData{
-		"FWidth":  l.fwidth,
-		"FHeight": l.fheight,
-		"Stride":  l.fstride,
-		"Padding": l.fpadding,
+func (l *Pooling) Unserialize(cfg nnet.LayerConfig) (err error) {
+	if err = cfg.CheckType(LAYER_POOLING); err == nil {
+		l.fwidth = cfg.Data.Int("FWidth")
+		l.fheight = cfg.Data.Int("FHeight")
+		l.fstride = cfg.Data.Int("Stride")
+		l.fpadding = cfg.Data.Int("Padding")
+
+		if l.fstride < 1 {
+			l.fstride = 1
+		}
 	}
 	return
+}
+
+func (l *Pooling) Serialize() (res nnet.LayerConfig) {
+	return LayerConfigPooling(l.fwidth, l.fheight, l.fstride, l.fpadding)
 }
 
 func (l *Pooling) GetOutput() *nnet.Data {

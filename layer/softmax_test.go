@@ -6,10 +6,12 @@ import (
 )
 
 func TestSoftmax_Complex(t *testing.T) {
-	l := SoftmaxLayerConstructor()
-	l.Init(nnet.LayerConfig{
-		Type: LAYER_SOFTMAX,
-	})
+	cfg := LayerConfigSoftmax()
+
+	l, err := LayerConstructorSoftmax(cfg)
+	if err != nil {
+		t.Errorf("create layer error:", err.Error())
+	}
 
 	iw, ih, id := 3, 1, 1
 	ow, oh, od := l.InitDataSizes(iw, ih, id)

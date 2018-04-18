@@ -8,6 +8,7 @@ import (
 	"github.com/drdreyworld/nnet/storage"
 	"github.com/drdreyworld/nnet/trainer"
 	"log"
+	"testing"
 )
 
 // Feed forawrd net for solve XOR function
@@ -35,42 +36,17 @@ func ExampleNet() {
 
 			// setup layers configuration
 			Layers: []nnet.LayerConfig{
-				{
-					// fully connected layer
-					Type: layer.LAYER_DENSE,
-					Data: nnet.LayerConfigData{
-						// with output sizes 5x5x5 (125 hidden neurons)
-						"OWidth":  5,
-						"OHeight": 5,
-						"ODepth":  5,
-					},
-				},
-				{
-					// activation layer (no weights - only activation function applied)
-					Type: layer.LAYER_ACTIVATION,
-					Data: nnet.LayerConfigData{
-						// set activation type - sigmoid
-						"ActCode": activation.ACTIVATION_SIGMOID,
-					},
-				},
-				{
-					// fully connected layer
-					Type: layer.LAYER_DENSE,
-					Data: nnet.LayerConfigData{
-						// with output sizes 1x1x1 (1 output neuron)
-						"OWidth":  1,
-						"OHeight": 1,
-						"ODepth":  1,
-					},
-				},
-				{
-					// activation layer (no weights - only activation function applied)
-					Type: layer.LAYER_ACTIVATION,
-					Data: nnet.LayerConfigData{
-						// set activation type - sigmoid
-						"ActCode": activation.ACTIVATION_SIGMOID,
-					},
-				},
+				// fully connected layer with output sizes 5x5x5 (125 hidden neurons)
+				layer.LayerConfigDense(5, 5, 5),
+
+				// activation layer (no weights - only activation function applied)
+				layer.LayerConfigActivation(&activation.ActivationSigmoid{}),
+
+				// fully connected layer with output sizes 1x1x1 (1 output neuron)
+				layer.LayerConfigDense(1, 1, 1),
+
+				// activation layer (no weights - only activation function applied)
+				layer.LayerConfigActivation(&activation.ActivationSigmoid{}),
 			},
 		})
 
@@ -132,4 +108,8 @@ func ExampleNet() {
 	if err := Storage.Save(); err != nil {
 		log.Fatal("save network error:", err.Error())
 	}
+}
+
+func Test_ExampleNet(t *testing.T) {
+	ExampleNet()
 }

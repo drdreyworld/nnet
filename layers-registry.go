@@ -1,21 +1,22 @@
 package nnet
 
 import (
-	"errors"
 	"fmt"
 )
 
-type LayerConstructor func() Layer
+type LayerConstructor func(cfg LayerConfig) (Layer, error)
 
 var LayersRegistry = layersRegistry{}
 
 type layersRegistry map[string]LayerConstructor
 
-func (reg layersRegistry) Create(key string) (Layer, error) {
-	if constructor, ok := reg[key]; ok {
-		return constructor(), nil
+const ERR_LAYER_NOT_REGISTERED = "layer not registered with type %s"
+
+func (reg layersRegistry) Create(cfg LayerConfig) (Layer, error) {
+	if constructor, ok := reg[cfg.Type]; ok {
+		return constructor(cfg)
 	}
 
-	return nil, errors.New(fmt.Sprintf("Layer '%s' is not registered", key))
+	return nil, fmt.Errorf(ERR_LAYER_NOT_REGISTERED, cfg.Type)
 }
 

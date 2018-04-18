@@ -6,15 +6,12 @@ import (
 )
 
 func TestDense_Complex(t *testing.T) {
-	l := DenseLayerConstructor()
-	l.Init(nnet.LayerConfig{
-		Type: LAYER_DENSE,
-		Data: nnet.LayerConfigData{
-			"OWidth":  1,
-			"OHeight": 2,
-			"ODepth":  3,
-		},
-	})
+	cfg := LayerConfigDense(1, 2, 3)
+
+	l, err := LayerConstructorDense(cfg)
+	if err != nil {
+		t.Errorf("create layer error:", err.Error())
+	}
 
 	iw, ih, id := 2, 2, 2
 	ow, oh, od := l.InitDataSizes(iw, ih, id)

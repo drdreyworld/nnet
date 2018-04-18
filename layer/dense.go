@@ -10,11 +10,23 @@ import (
 const LAYER_DENSE = "dense"
 
 func init() {
-	nnet.LayersRegistry[LAYER_DENSE] = DenseLayerConstructor
+	nnet.LayersRegistry[LAYER_DENSE] = LayerConstructorDense
 }
 
-func DenseLayerConstructor() nnet.Layer {
-	return &Dense{}
+func LayerConfigDense(OWidth, OHeight, ODepth int) (res nnet.LayerConfig) {
+	res.Type = LAYER_DENSE
+	res.Data = nnet.LayerConfigData{
+		"OWidth":  OWidth,
+		"OHeight": OHeight,
+		"ODepth":  ODepth,
+	}
+	return
+}
+
+func LayerConstructorDense(cfg nnet.LayerConfig) (res nnet.Layer, err error) {
+	res = &Dense{}
+	err = res.Unserialize(cfg)
+	return
 }
 
 type Dense struct {
@@ -32,34 +44,10 @@ type Dense struct {
 	gradInputs  *nnet.Data
 }
 
-func (l *Dense) Init(config nnet.LayerConfig) (err error) {
+func (l *Dense) InitDataSizes(w, h, d int) (oW, oH, oD int) {
 	l.output = &nnet.Data{}
-	l.gradWeights = &nnet.Data{}
-	l.gradBiases = &nnet.Data{}
-	l.gradInputs = &nnet.Data{}
-
-	l.oWidth = config.Data.Int("OWidth")
-	l.oHeight = config.Data.Int("OHeight")
-	l.oDepth = config.Data.Int("ODepth")
-
 	l.output.InitCube(l.oWidth, l.oHeight, l.oDepth)
 
-	if w, ok := config.Data["Weights"].(nnet.Data); ok {
-		l.weights = &w
-	} else {
-		l.weights = &nnet.Data{}
-	}
-
-	if w, ok := config.Data["Biases"].(nnet.Data); ok {
-		l.biases = &w
-	} else {
-		l.biases = &nnet.Data{}
-	}
-
-	return
-}
-
-func (l *Dense) InitDataSizes(w, h, d int) (oW, oH, oD int) {
 	l.iWidth, l.iHeight, l.iDepth = w, h, d
 
 	if len(l.weights.Data) == 0 {
@@ -70,8 +58,13 @@ func (l *Dense) InitDataSizes(w, h, d int) (oW, oH, oD int) {
 		l.weights.InitHiperCubeRandom(l.iWidth, l.iHeight, l.iDepth, l.oWidth*l.oHeight*l.oDepth, 0, maxWeight)
 	}
 
+	l.gradInputs = &nnet.Data{}
 	l.gradInputs.InitCube(l.iWidth, l.iHeight, l.iDepth)
+
+	l.gradBiases = &nnet.Data{}
 	l.gradBiases.InitCube(l.oWidth, l.oHeight, l.oDepth)
+
+	l.gradWeights = &nnet.Data{}
 	l.gradWeights.InitHiperCube(l.iWidth, l.iHeight, l.iDepth, l.oWidth*l.oHeight*l.oDepth)
 
 	return l.oWidth, l.oHeight, l.oDepth
@@ -111,18 +104,21 @@ func (l *Dense) Backprop(deltas *nnet.Data) *nnet.Data {
 	return l.gradInputs
 }
 
-func (l *Dense) Serialize() (res nnet.LayerConfig) {
-	res.Type = LAYER_DENSE
-	res.Data = nnet.LayerConfigData{
-		"OWidth":  l.oWidth,
-		"OHeight": l.oHeight,
-		"ODepth":  l.oDepth,
+func (l *Dense) Unserialize(cfg nnet.LayerConfig) (err error) {
+	if err = cfg.CheckType(LAYER_DENSE); err == nil {
+		l.oWidth = cfg.Data.Int("OWidth")
+		l.oHeight = cfg.Data.Int("OHeight")
+		l.oDepth = cfg.Data.Int("ODepth")
+		l.weights = cfg.Data.GetWeights()
+		l.biases = cfg.Data.GetBiases()
 	}
+	return
+}
 
-	if l.weights != nil {
-		res.Data["Weights"] = *l.weights
-		res.Data["Biases"] = *l.biases
-	}
+func (l *Dense) Serialize() (res nnet.LayerConfig) {
+	res = LayerConfigDense(l.oWidth, l.oHeight, l.oDepth)
+	res.Data.SetWeights(l.weights)
+	res.Data.SetBiases(l.biases)
 
 	return
 }

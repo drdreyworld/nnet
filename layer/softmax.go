@@ -8,11 +8,18 @@ import (
 const LAYER_SOFTMAX = "softmax"
 
 func init() {
-	nnet.LayersRegistry[LAYER_SOFTMAX] = SoftmaxLayerConstructor
+	nnet.LayersRegistry[LAYER_SOFTMAX] = LayerConstructorSoftmax
 }
 
-func SoftmaxLayerConstructor() nnet.Layer {
-	return &Softmax{}
+func LayerConfigSoftmax() (res nnet.LayerConfig) {
+	res.Type = LAYER_SOFTMAX
+	return
+}
+
+func LayerConstructorSoftmax(cfg nnet.LayerConfig) (res nnet.Layer, err error) {
+	res = &Softmax{}
+	err = res.Unserialize(cfg)
+	return
 }
 
 type Softmax struct {
@@ -23,17 +30,11 @@ type Softmax struct {
 	output *nnet.Data
 }
 
-func (l *Softmax) Init(config nnet.LayerConfig) (err error) {
-	l.inputs = &nnet.Data{}
-	l.output = &nnet.Data{}
-
-	return
-}
-
 func (l *Softmax) InitDataSizes(w, h, d int) (int, int, int) {
 	l.iWidth, l.iHeight, l.iDepth = w, h, d
 	l.oWidth, l.oHeight, l.oDepth = w, h, d
 
+	l.output = &nnet.Data{}
 	l.output.InitCube(w, h, d)
 
 	return w, h, d
@@ -70,7 +71,10 @@ func (l *Softmax) Backprop(deltas *nnet.Data) *nnet.Data {
 	return deltas.Copy()
 }
 
+func (l *Softmax) Unserialize(cfg nnet.LayerConfig) error {
+	return cfg.CheckType(LAYER_SOFTMAX)
+}
+
 func (l *Softmax) Serialize() (res nnet.LayerConfig) {
-	res.Type = LAYER_SOFTMAX
-	return
+	return LayerConfigSoftmax()
 }

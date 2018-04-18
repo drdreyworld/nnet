@@ -5,7 +5,7 @@ import (
 	"github.com/drdreyworld/nnet"
 )
 
-type testActivationDoubleValue struct {}
+type testActivationDoubleValue struct{}
 
 func (a *testActivationDoubleValue) Forward(v float64) float64 {
 	return 2 * v
@@ -20,7 +20,13 @@ func (a *testActivationDoubleValue) Serialize() string {
 }
 
 func TestActivationConstructor(t *testing.T) {
-	l := ActivationConstructor()
+	cfg := LayerConfigActivation(&testActivationDoubleValue{})
+
+	l, err := LayerConstructorActivation(cfg)
+	if err != nil {
+		t.Errorf("create layer error:", err.Error())
+	}
+
 	if _, ok := l.(nnet.Layer); !ok {
 		t.Error("constructor returns not Layer type")
 	}
@@ -32,13 +38,12 @@ func TestActivationConstructor(t *testing.T) {
 func TestActivation_Complex(t *testing.T) {
 	nnet.ActivationsRegistry["testActivationDoubleValue"] = &testActivationDoubleValue{}
 
-	l := ActivationConstructor()
-	l.Init(nnet.LayerConfig{
-		Type: LAYER_ACTIVATION,
-		Data: nnet.LayerConfigData{
-			"ActCode" : "testActivationDoubleValue",
-		},
-	})
+	cfg := LayerConfigActivation(&testActivationDoubleValue{})
+
+	l, err := LayerConstructorActivation(cfg)
+	if err != nil {
+		t.Errorf("create layer error:", err.Error())
+	}
 
 	iw, ih, id := 10, 1, 1
 	ow, oh, od := l.InitDataSizes(iw, ih, id)
@@ -61,7 +66,7 @@ func TestActivation_Complex(t *testing.T) {
 	}
 
 	for i := 0; i < len(inputs.Data); i++ {
-		if output.Data[i] != 2 * inputs.Data[i] {
+		if output.Data[i] != 2*inputs.Data[i] {
 			t.Error("output value is invalid")
 		}
 	}
@@ -84,7 +89,7 @@ func TestActivation_Complex(t *testing.T) {
 		t.Error("invalid layer type in serialized config")
 	}
 
-	actCode := config.Data.String("ActCode")
+	actCode := config.Data.String(nnet.KEY_ACTIVATION)
 
 	if actCode != "testActivationDoubleValue" {
 		t.Error("missed ActCode in serialized config data")

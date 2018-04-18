@@ -1,5 +1,5 @@
 /*
-Extendable golang neural network library
+Package nnet defines base primitives and interfaces for neural network operations.
 
 Now it can be used for construction feed forward networks (FC and CNN).
 

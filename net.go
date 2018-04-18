@@ -37,11 +37,7 @@ func (n *Net) Init(cfg NetConfig) (err error) {
 	n.LossFunc = LossRegistry[n.LossCode]
 
 	n.IWidth, n.IHeight, n.IDepth = cfg.IWidth, cfg.IHeight, cfg.IDepth
-	n.OWidth, n.OHeight, n.ODepth = cfg.IWidth, cfg.IHeight, cfg.IDepth
-
-	for i := 0; i < len(n.layers); i++ {
-		n.OWidth, n.OHeight, n.ODepth = n.layers[i].InitDataSizes(n.OWidth, n.OHeight, n.ODepth)
-	}
+	n.OWidth, n.OHeight, n.ODepth = cfg.OWidth, cfg.OHeight, cfg.ODepth
 
 	return
 }

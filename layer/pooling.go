@@ -134,7 +134,7 @@ func (l *Pooling) Unserialize(cfg nnet.LayerConfig) (err error) {
 }
 
 func (l *Pooling) Serialize() (res nnet.LayerConfig) {
-	return LayerConfigPooling(l.fwidth, l.fheight, l.fstride, l.fpadding)
+	return LayerConfigPooling(l.fwidth, l.fheight, l.fpadding, l.fstride)
 }
 
 func (l *Pooling) GetOutput() *nnet.Data {

@@ -12,11 +12,11 @@ const ERR_FILE_FILENAME_NOT_SET = "storage filename not set"
 const ERR_FILE_NETWORK_NOT_SET = "storage network not set"
 
 type JsonFile struct {
-	Network nnet.NNet
+	Network nnet.Net
 	Filename string
 }
 
-func (s *JsonFile) SetNet(n nnet.NNet) {
+func (s *JsonFile) SetNet(n nnet.Net) {
 	s.Network = n
 }
 

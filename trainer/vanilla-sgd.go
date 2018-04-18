@@ -3,13 +3,13 @@ package trainer
 import "github.com/drdreyworld/nnet"
 
 type VanilaSGD struct {
-	Network  nnet.NNet
+	Network  nnet.Net
 	Learning float64
 	Output   *nnet.Data
 	Deltas   *nnet.Data
 }
 
-func (t *VanilaSGD) SetNet(n nnet.NNet) {
+func (t *VanilaSGD) SetNet(n nnet.Net) {
 	t.Network = n
 }
 

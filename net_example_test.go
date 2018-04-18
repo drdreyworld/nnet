@@ -13,7 +13,7 @@ import (
 
 // Feed forawrd net for solve XOR function
 func ExampleNet() {
-	xor := &nnet.Net{}
+	xor := &nnet.NetDefault{}
 
 	// create storage for load/save network config
 	Storage := storage.JsonFile{Filename: "/tmp/xor.json"}

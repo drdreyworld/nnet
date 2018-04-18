@@ -10,7 +10,7 @@ func TestSoftmax_Complex(t *testing.T) {
 
 	l, err := LayerConstructorSoftmax(cfg)
 	if err != nil {
-		t.Errorf("create layer error:", err.Error())
+		t.Error("create layer error:", err.Error())
 	}
 
 	iw, ih, id := 3, 1, 1

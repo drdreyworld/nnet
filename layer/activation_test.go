@@ -35,7 +35,7 @@ func createTestActivationLayer(t *testing.T) nnet.Layer  {
 
 	l, err := LayerConstructorActivation(cfg)
 	if err != nil {
-		t.Errorf("create layer error:", err.Error())
+		t.Error("create layer error:", err.Error())
 	}
 
 	return l
@@ -45,15 +45,15 @@ func TestLayerConfigActivation(t *testing.T) {
 	cfg := createTestActivationLayerConfig(t)
 
 	if err := cfg.CheckType(LAYER_ACTIVATION); err != nil {
-		t.Errorf("config type invalid:", err.Error())
+		t.Error("config type invalid:", err.Error())
 	}
 
 	if cfg.Data == nil {
-		t.Errorf("config data not initialized")
+		t.Error("config data not initialized")
 	}
 
 	if _, ok := cfg.Data.GetActivation().(*testActivationDoubleValue); !ok {
-		t.Errorf("invalid activation function in config")
+		t.Error("invalid activation function in config")
 	}
 }
 
@@ -156,6 +156,6 @@ func TestActivation_Unserialize(t *testing.T) {
 	c := createTestActivationLayerConfig(t)
 
 	if err := l.Unserialize(c); err != nil {
-		t.Errorf("error on unserialization layer from config:", err.Error())
+		t.Error("error on unserialization layer from config:", err.Error())
 	}
 }

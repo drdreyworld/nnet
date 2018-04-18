@@ -3,7 +3,7 @@ package trainer
 import "github.com/drdreyworld/nnet"
 
 type VanillaSGDExt struct {
-	Network nnet.NNet
+	Network nnet.Net
 
 	Learning    float64
 	Momentum    float64
@@ -14,7 +14,7 @@ type VanillaSGDExt struct {
 	Gradients []*nnet.Data
 }
 
-func (t *VanillaSGDExt) SetNet(n nnet.NNet) {
+func (t *VanillaSGDExt) SetNet(n nnet.Net) {
 	t.Network = n
 }
 

@@ -43,6 +43,19 @@ func (d LayerConfigData) GetWeights() *Data {
 	if weights, ok := d[KEY_WEIGHTS].(Data); ok {
 		return &weights
 	}
+
+	if weights, ok := d[KEY_WEIGHTS].(map[string]interface{}); ok {
+		w := &Data{}
+		w.Dims = make([]int, len(weights["Dims"].([]interface{})))
+		w.Data = make([]float64, len(weights["Data"].([]interface{})))
+		for i := 0; i < len(w.Dims); i++ {
+			w.Dims[i] = int(weights["Dims"].([]interface{})[i].(float64))
+		}
+		for i := 0; i < len(w.Data); i++ {
+			w.Data[i] = weights["Data"].([]interface{})[i].(float64)
+		}
+		return w
+	}
 	return &Data{}
 }
 
@@ -55,6 +68,19 @@ func (d LayerConfigData) SetWeights(weights *Data) {
 func (d LayerConfigData) GetBiases() *Data {
 	if biases, ok := d[KEY_BIASES].(Data); ok {
 		return &biases
+	}
+
+	if biases, ok := d[KEY_BIASES].(map[string]interface{}); ok {
+		w := &Data{}
+		w.Dims = make([]int, len(biases["Dims"].([]interface{})))
+		w.Data = make([]float64, len(biases["Data"].([]interface{})))
+		for i := 0; i < len(w.Dims); i++ {
+			w.Dims[i] = int(biases["Dims"].([]interface{})[i].(float64))
+		}
+		for i := 0; i < len(w.Data); i++ {
+			w.Data[i] = biases["Data"].([]interface{})[i].(float64)
+		}
+		return w
 	}
 	return &Data{}
 }

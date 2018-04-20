@@ -29,7 +29,7 @@ func (s *JsonFile) Save() (err error) {
 		return errors.New(ERR_FILE_FILENAME_NOT_SET)
 	}
 
-	d, err := json.Marshal(s.Network.Serialize())
+	d, err := json.Marshal(s.Network)
 	if err != nil {
 		return
 	}
@@ -59,10 +59,8 @@ func (s *JsonFile) Load() (err error) {
 		return
 	}
 
-	c := nnet.NetConfig{}
-
-	if err = json.Unmarshal(d, &c); err == nil {
-		err = s.Network.Init(c)
+	if err = json.Unmarshal(d, s.Network); err == nil {
+		err = s.Network.Init()
 	}
 
 	return

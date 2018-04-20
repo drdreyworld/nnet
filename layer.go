@@ -6,10 +6,8 @@ type Layer interface {
 	Activate(inputs *Data) (output *Data)
 	Backprop(deltas *Data) (nextDeltas *Data)
 
-	Unserialize(cfg LayerConfig) (err error)
-	Serialize() (cfg LayerConfig)
-
 	GetOutput() *Data
+	GetType() string
 }
 
 type TrainableLayer interface {

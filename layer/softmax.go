@@ -3,36 +3,35 @@ package layer
 import (
 	"github.com/drdreyworld/nnet"
 	"math"
+	"encoding/gob"
 )
 
 const LAYER_SOFTMAX = "softmax"
 
 func init() {
 	nnet.LayersRegistry[LAYER_SOFTMAX] = LayerConstructorSoftmax
+	gob.Register(Softmax{})
 }
 
-func LayerConfigSoftmax() (res nnet.LayerConfig) {
-	res.Type = LAYER_SOFTMAX
-	return
-}
-
-func LayerConstructorSoftmax(cfg nnet.LayerConfig) (res nnet.Layer, err error) {
-	res = &Softmax{}
-	err = res.Unserialize(cfg)
-	return
+func LayerConstructorSoftmax() nnet.Layer {
+	return &Softmax{}
 }
 
 type Softmax struct {
-	iWidth, iHeight, iDepth int
-	oWidth, oHeight, oDepth int
+	IWidth, IHeight, IDepth int
+	OWidth, OHeight, ODepth int
 
 	inputs *nnet.Data
 	output *nnet.Data
 }
 
+func (l *Softmax) GetType() string {
+	return LAYER_SOFTMAX
+}
+
 func (l *Softmax) InitDataSizes(w, h, d int) (int, int, int) {
-	l.iWidth, l.iHeight, l.iDepth = w, h, d
-	l.oWidth, l.oHeight, l.oDepth = w, h, d
+	l.IWidth, l.IHeight, l.IDepth = w, h, d
+	l.OWidth, l.OHeight, l.ODepth = w, h, d
 
 	l.output = &nnet.Data{}
 	l.output.InitCube(w, h, d)
@@ -69,12 +68,4 @@ func (l *Softmax) GetOutput() *nnet.Data {
 
 func (l *Softmax) Backprop(deltas *nnet.Data) *nnet.Data {
 	return deltas.Copy()
-}
-
-func (l *Softmax) Unserialize(cfg nnet.LayerConfig) error {
-	return cfg.CheckType(LAYER_SOFTMAX)
-}
-
-func (l *Softmax) Serialize() (res nnet.LayerConfig) {
-	return LayerConfigSoftmax()
 }

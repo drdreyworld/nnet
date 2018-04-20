@@ -6,12 +6,7 @@ import (
 )
 
 func TestSoftmax_Complex(t *testing.T) {
-	cfg := LayerConfigSoftmax()
-
-	l, err := LayerConstructorSoftmax(cfg)
-	if err != nil {
-		t.Error("create layer error:", err.Error())
-	}
+	l := LayerConstructorSoftmax()
 
 	iw, ih, id := 3, 1, 1
 	ow, oh, od := l.InitDataSizes(iw, ih, id)
@@ -59,11 +54,5 @@ func TestSoftmax_Complex(t *testing.T) {
 		if gradient.Data[i] != deltas.Data[i] {
 			t.Error("gradient value is changed")
 		}
-	}
-
-	config := l.Serialize()
-
-	if config.Type != LAYER_SOFTMAX {
-		t.Error("invalid layer type in serialized config")
 	}
 }

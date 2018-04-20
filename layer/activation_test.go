@@ -19,58 +19,23 @@ func (a *testActivationDoubleValue) Backward(v float64) float64 {
 	return 0.5 * v
 }
 
-func (a *testActivationDoubleValue) Serialize() string {
-	return "testActivationDoubleValue"
-}
-
-func createTestActivationLayerConfig(t *testing.T) nnet.LayerConfig {
+func testCreateActivationLayer(t *testing.T) *Activation {
 	t.Helper()
-	return LayerConfigActivation(&testActivationDoubleValue{})
-}
-
-func createTestActivationLayer(t *testing.T) nnet.Layer  {
-	t.Helper()
-
-	cfg := createTestActivationLayerConfig(t)
-
-	l, err := LayerConstructorActivation(cfg)
-	if err != nil {
-		t.Error("create layer error:", err.Error())
-	}
+	l := LayerConstructorActivation().(*Activation)
+	l.ActFunc = "testActivationDoubleValue"
 
 	return l
 }
 
-func TestLayerConfigActivation(t *testing.T) {
-	cfg := createTestActivationLayerConfig(t)
-
-	if err := cfg.CheckType(LAYER_ACTIVATION); err != nil {
-		t.Error("config type invalid:", err.Error())
-	}
-
-	if cfg.Data == nil {
-		t.Error("config data not initialized")
-	}
-
-	if _, ok := cfg.Data.GetActivation().(*testActivationDoubleValue); !ok {
-		t.Error("invalid activation function in config")
-	}
-}
-
 func TestLayerConstructorActivation(t *testing.T) {
-	l := createTestActivationLayer(t)
-
-	if _, ok := l.(nnet.Layer); !ok {
-		t.Error("constructor returns not Layer type")
-	}
-
+	l := LayerConstructorActivation()
 	if _, ok := l.(*Activation); !ok {
 		t.Error("constructor returns not Activation layer")
 	}
 }
 
 func TestActivation_InitDataSizes(t *testing.T) {
-	l := createTestActivationLayer(t)
+	l := testCreateActivationLayer(t)
 
 	iw, ih, id := 10, 1, 1
 	ow, oh, od := l.InitDataSizes(iw, ih, id)
@@ -81,7 +46,7 @@ func TestActivation_InitDataSizes(t *testing.T) {
 }
 
 func TestActivation_Activate(t *testing.T) {
-	l := createTestActivationLayer(t)
+	l := testCreateActivationLayer(t)
 	a := testActivationDoubleValue{}
 
 	iw, ih, id := 10, 1, 1
@@ -108,7 +73,7 @@ func TestActivation_Activate(t *testing.T) {
 }
 
 func TestActivation_Backprop(t *testing.T) {
-	l := createTestActivationLayer(t)
+	l := testCreateActivationLayer(t)
 	a := testActivationDoubleValue{}
 
 	iw, ih, id := 10, 1, 1
@@ -130,32 +95,5 @@ func TestActivation_Backprop(t *testing.T) {
 		if gradient.Data[i] != deltas.Data[i] * a.Backward(output.Data[i]) {
 			t.Error("gradient value is invalid")
 		}
-	}
-}
-
-func TestActivation_Serialize(t *testing.T) {
-	l := createTestActivationLayer(t)
-	c := l.Serialize()
-	a := c.Data.GetActivation()
-
-	if c.CheckType(LAYER_ACTIVATION) != nil {
-		t.Error("invalid layer type in serialized config")
-	}
-
-	if a == nil {
-		t.Error("missed activation in serialized config data")
-	}
-
-	if _, ok := a.(*testActivationDoubleValue); !ok {
-		t.Error("invalid activation in serialized config data")
-	}
-}
-
-func TestActivation_Unserialize(t *testing.T) {
-	l := createTestActivationLayer(t)
-	c := createTestActivationLayerConfig(t)
-
-	if err := l.Unserialize(c); err != nil {
-		t.Error("error on unserialization layer from config:", err.Error())
 	}
 }

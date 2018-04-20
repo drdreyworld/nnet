@@ -27,7 +27,3 @@ func (a *ActivationELU) Backward(v float64) float64 {
 	}
 	return 1
 }
-
-func (a *ActivationELU) Serialize() string {
-	return ACTIVATION_ELU
-}

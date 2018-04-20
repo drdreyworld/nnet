@@ -2,25 +2,18 @@ package layer
 
 import (
 	"github.com/drdreyworld/nnet"
+	"encoding/gob"
 )
 
 const LAYER_ACTIVATION = "activation"
 
 func init() {
 	nnet.LayersRegistry[LAYER_ACTIVATION] = LayerConstructorActivation
+	gob.Register(Activation{})
 }
 
-func LayerConfigActivation(activation nnet.Activation) (res nnet.LayerConfig) {
-	res.Type = LAYER_ACTIVATION
-	res.Data = nnet.LayerConfigData{}
-	res.Data.SetActivation(activation)
-	return
-}
-
-func LayerConstructorActivation(cfg nnet.LayerConfig) (res nnet.Layer, err error) {
-	res = &Activation{}
-	err = res.Unserialize(cfg)
-	return
+func LayerConstructorActivation() nnet.Layer {
+	return &Activation{}
 }
 
 type Activation struct {
@@ -31,8 +24,12 @@ type Activation struct {
 	inputs *nnet.Data
 	output *nnet.Data
 
+	ActFunc string
 	actFunc nnet.Activation
-	actCode string
+}
+
+func (l *Activation) GetType() string {
+	return LAYER_ACTIVATION
 }
 
 func (l *Activation) InitDataSizes(w, h, d int) (int, int, int) {
@@ -40,6 +37,12 @@ func (l *Activation) InitDataSizes(w, h, d int) (int, int, int) {
 
 	l.output = &nnet.Data{}
 	l.output.InitCube(w, h, d)
+
+	if f, ok := nnet.ActivationsRegistry[l.ActFunc]; ok {
+		l.actFunc = f
+	} else {
+		panic("activation function is not registered:" + l.ActFunc)
+	}
 
 	return w, h, d
 }
@@ -60,17 +63,6 @@ func (l *Activation) Backprop(deltas *nnet.Data) (gradient *nnet.Data) {
 		gradient.Data[i] = deltas.Data[i] * l.actFunc.Backward(l.output.Data[i])
 	}
 	return
-}
-
-func (l *Activation) Unserialize(cfg nnet.LayerConfig) (err error) {
-	if err = cfg.CheckType(LAYER_ACTIVATION); err == nil {
-		l.actFunc = cfg.Data.GetActivation()
-	}
-	return
-}
-
-func (l *Activation) Serialize() (res nnet.LayerConfig) {
-	return LayerConfigActivation(l.actFunc)
 }
 
 func (l *Activation) GetOutput() *nnet.Data {

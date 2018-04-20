@@ -2,38 +2,46 @@ package nnet
 
 import (
 	"errors"
+	"encoding/gob"
 )
 
 const ERR_NET_NOT_SET_LOSS = "loss function not set"
+
+func init() {
+	gob.Register(NetDefault{})
+}
 
 type NetDefault struct {
 	IWidth, IHeight, IDepth int
 	OWidth, OHeight, ODepth int
 
-	LossFunc LossFunction
-	LossCode string
+	Loss string       // user defined loss code
+	loss LossFunction // initiaized function by code
 
-	layers   []Layer
+	Layers Layers
 }
 
-func (n *NetDefault) Init(cfg NetConfig) (err error) {
-	n.layers, err = cfg.CreateLayers()
-	if err != nil {
-		return
+func (n *NetDefault) Init() (err error) {
+	if f, ok := LossRegistry[n.Loss]; !ok {
+		return errors.New("loss not registered: " + n.Loss)
+	} else {
+		n.loss = f
 	}
 
-	n.LossCode = cfg.LossCode
-	n.LossFunc = LossRegistry[n.LossCode]
+	w, h, d := n.IWidth, n.IHeight, n.IDepth
 
-	n.IWidth, n.IHeight, n.IDepth = cfg.IWidth, cfg.IHeight, cfg.IDepth
-	n.OWidth, n.OHeight, n.ODepth = cfg.OWidth, cfg.OHeight, cfg.ODepth
+	for i := 0; i < len(n.Layers); i++ {
+		w, h, d = n.Layers[i].InitDataSizes(w, h, d)
+	}
+
+	n.OWidth, n.OHeight, n.ODepth = w, h, d
 
 	return
 }
 
 func (n *NetDefault) Activate(inputs *Data) *Data {
-	for i := 0; i < len(n.layers); i++ {
-		inputs = n.layers[i].Activate(inputs)
+	for i := 0; i < len(n.Layers); i++ {
+		inputs = n.Layers[i].Activate(inputs)
 	}
 	return inputs
 }
@@ -41,8 +49,8 @@ func (n *NetDefault) Activate(inputs *Data) *Data {
 func (n *NetDefault) Backprop(deltas *Data) (gradient *Data) {
 	gradient = deltas.Copy()
 
-	for i := len(n.layers) - 1; i >= 0; i-- {
-		gradient = n.layers[i].Backprop(gradient)
+	for i := len(n.Layers) - 1; i >= 0; i-- {
+		gradient = n.Layers[i].Backprop(gradient)
 	}
 	return gradient
 }
@@ -55,34 +63,17 @@ func (n *NetDefault) GetOutputDeltas(target, output *Data) (res *Data) {
 	return
 }
 
-func (n *NetDefault) Serialize() NetConfig {
-	res := NetConfig{}
-
-	res.IWidth, res.IHeight, res.IDepth = n.IWidth, n.IHeight, n.IDepth
-	res.OWidth, res.OHeight, res.ODepth = n.OWidth, n.OHeight, n.ODepth
-
-	res.LossCode = n.LossCode
-
-	for i := 0; i < len(n.layers); i++ {
-		res.Layers = append(res.Layers, n.layers[i].Serialize())
-	}
-	return res
-}
-
-func (n *NetDefault) GetLoss(target, output *Data) (float64, error) {
-	if n.LossFunc == nil {
-		return 0, errors.New(ERR_NET_NOT_SET_LOSS)
-	}
-	return n.LossFunc(target, output), nil
+func (n *NetDefault) GetLoss(target, output *Data) float64 {
+	return n.loss(target, output)
 }
 
 func (n *NetDefault) GetLayersCount() int {
-	return len(n.layers)
+	return len(n.Layers)
 }
 
 func (n *NetDefault) GetLayer(index int) Layer {
-	if index > -1 && index < len(n.layers) {
-		return n.layers[index]
+	if index > -1 && index < len(n.Layers) {
+		return n.Layers[index]
 	}
 	return nil
 }

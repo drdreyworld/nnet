@@ -25,34 +25,34 @@ func ExampleNet() {
 		log.Println("load network error:", err.Error())
 		log.Println("initialize new network")
 
-		err := xor.Init(nnet.NetConfig{
+		xor = &nnet.NetDefault{
 			// setup input data sizes 2x1x1
 			IWidth:  2,
 			IHeight: 1,
 			IDepth:  1,
 
 			// setup loss function type (need for GetLoss function)
-			LossCode: loss.LOSS_REGRESSION,
+			Loss: loss.LOSS_REGRESSION,
 
-			// setup layers configuration
-			Layers: []nnet.LayerConfig{
+			Layers: nnet.Layers{
 				// fully connected layer with output sizes 5x5x5 (125 hidden neurons)
-				layer.LayerConfigDense(5, 5, 5),
+				&layer.Dense{OWidth: 5, OHeight: 5, ODepth: 5},
 
 				// activation layer (no weights - only activation function applied)
-				layer.LayerConfigActivation(&activation.ActivationSigmoid{}),
-
+				&layer.Activation{
+					ActFunc: activation.ACTIVATION_SIGMOID,
+				},
 				// fully connected layer with output sizes 1x1x1 (1 output neuron)
-				layer.LayerConfigDense(1, 1, 1),
-
+				&layer.Dense{OWidth: 1, OHeight: 1, ODepth: 1},
 				// activation layer (no weights - only activation function applied)
-				layer.LayerConfigActivation(&activation.ActivationSigmoid{}),
+				&layer.Activation{
+					ActFunc: activation.ACTIVATION_SIGMOID,
+				},
 			},
-		})
-
-		if err != nil {
-			log.Fatal("init network error:", err.Error())
 		}
+		xor.Init()
+
+		Storage.SetNet(xor)
 	}
 
 	// create trainer for learning network with LearningRate 0.1
@@ -81,11 +81,7 @@ func ExampleNet() {
 		l := 0.0
 		for i := 0; i < len(inputs); i++ {
 			outputs := Trainer.Activate(&inputs[i], &targets[i])
-			lossval, err := xor.GetLoss(&targets[i], outputs)
-
-			if err != nil {
-				log.Fatal("get loss error:", err.Error())
-			}
+			lossval := xor.GetLoss(&targets[i], outputs)
 
 			Trainer.UpdateWeights()
 			l += lossval

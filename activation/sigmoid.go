@@ -20,7 +20,3 @@ func (a *ActivationSigmoid) Forward(v float64) float64 {
 func (a *ActivationSigmoid) Backward(v float64) float64 {
 	return v * (1 - v)
 }
-
-func (a *ActivationSigmoid) Serialize() string {
-	return ACTIVATION_SIGMOID
-}

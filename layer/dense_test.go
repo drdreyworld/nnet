@@ -6,12 +6,11 @@ import (
 )
 
 func TestDense_Complex(t *testing.T) {
-	cfg := LayerConfigDense(1, 2, 3)
+	l := LayerConstructorDense().(*Dense)
+	l.OWidth = 1
+	l.OHeight = 2
+	l.ODepth = 3
 
-	l, err := LayerConstructorDense(cfg)
-	if err != nil {
-		t.Error("create layer error:", err.Error())
-	}
 
 	iw, ih, id := 2, 2, 2
 	ow, oh, od := l.InitDataSizes(iw, ih, id)
@@ -38,36 +37,6 @@ func TestDense_Complex(t *testing.T) {
 
 	if output.Dims[0] != ow || output.Dims[1] != oh || output.Dims[2] != od {
 		t.Error("output dimentions mistmatch")
-	}
-
-	config := l.Serialize()
-
-	if config.Type != LAYER_DENSE {
-		t.Error("invalid layer type in serialized config")
-	}
-
-	if config.Data.Int("OWidth") != 1 {
-		t.Error("missed output width in serialized config")
-	}
-
-	if config.Data.Int("OHeight") != 2 {
-		t.Error("missed output height in serialized config")
-	}
-
-	if config.Data.Int("ODepth") != 3 {
-		t.Error("missed output depth in serialized config")
-	}
-
-	if weights, ok := config.Data["Weights"].(nnet.Data); !ok {
-		t.Error("missed weights in serialized config")
-	} else if len(weights.Data) != iw*ih*id*ow*oh*od {
-		t.Error("invalid weights length in serialized config")
-	}
-
-	if biases, ok := config.Data["Biases"].(nnet.Data); !ok {
-		t.Error("missed biases in serialized config")
-	} else if len(biases.Data) != ow*oh*od {
-		t.Error("invalid biases length in serialized config")
 	}
 
 	// @todo test calc output algorithm

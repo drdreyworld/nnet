@@ -4,7 +4,7 @@ import (
 	"fmt"
 )
 
-type LayerConstructor func(cfg LayerConfig) (Layer, error)
+type LayerConstructor func() Layer
 
 var LayersRegistry = layersRegistry{}
 
@@ -12,11 +12,11 @@ type layersRegistry map[string]LayerConstructor
 
 const ERR_LAYER_NOT_REGISTERED = "layer not registered with type %s"
 
-func (reg layersRegistry) Create(cfg LayerConfig) (Layer, error) {
-	if constructor, ok := reg[cfg.Type]; ok {
-		return constructor(cfg)
+func (reg layersRegistry) Create(LayerType string) (Layer, error) {
+	if constructor, ok := reg[LayerType]; ok {
+		return constructor(), nil
 	}
 
-	return nil, fmt.Errorf(ERR_LAYER_NOT_REGISTERED, cfg.Type)
+	return nil, fmt.Errorf(ERR_LAYER_NOT_REGISTERED, LayerType)
 }
 

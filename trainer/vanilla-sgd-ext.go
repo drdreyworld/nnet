@@ -51,19 +51,19 @@ func (t *VanillaSGDExt) UpdateWeights() {
 		if ok {
 			w, g := layer.GetWeightsWithGradient()
 			for j := 0; j < len(w.Data); j++ {
-				value := t.Gradients[k].Data[i]*t.Momentum + t.Learning*g.Data[j] + t.WeightDecay * w.Data[j]
+				value := t.Gradients[k].Data[j]*t.Momentum + t.Learning*g.Data[j] + t.WeightDecay * w.Data[j]
 
 				w.Data[j] -= value
-				t.Gradients[k].Data[i] = value
+				t.Gradients[k].Data[j] = value
 			}
 			k++
 
 			w, g = layer.GetBiasesWithGradient()
 			for j := 0; j < len(w.Data); j++ {
-				value := t.Gradients[k].Data[i]*t.Momentum + t.Learning*g.Data[j] + t.WeightDecay * w.Data[j]
+				value := t.Gradients[k].Data[j]*t.Momentum + t.Learning*g.Data[j] + t.WeightDecay * w.Data[j]
 
 				w.Data[j] -= value
-				t.Gradients[k].Data[i] = value
+				t.Gradients[k].Data[j] = value
 			}
 			k++
 

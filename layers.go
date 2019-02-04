@@ -27,7 +27,7 @@ type structToUnmarshalLayer struct {
 	Data *json.RawMessage
 }
 
-func (c Layers) UnmarshalJSON(b []byte) (err error) {
+func (c *Layers) UnmarshalJSON(b []byte) (err error) {
 	cfg := []structToUnmarshalLayer{}
 
 	if err = json.Unmarshal(b, &cfg); err != nil {
@@ -44,10 +44,8 @@ func (c Layers) UnmarshalJSON(b []byte) (err error) {
 			json.Unmarshal(*cfg[i].Data, l)
 		}
 
-		c = append(c, l)
+		*c = append(*c, l)
 	}
 
 	return
 }
-
-

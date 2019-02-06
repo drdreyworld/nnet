@@ -1,9 +1,10 @@
 package layer
 
 import (
-	"github.com/drdreyworld/nnet"
-	"math"
 	"encoding/gob"
+	"github.com/drdreyworld/nnet"
+	"log"
+	"math"
 )
 
 const LAYER_SOFTMAX = "softmax"
@@ -35,6 +36,8 @@ func (l *Softmax) InitDataSizes(w, h, d int) (int, int, int) {
 
 	l.output = &nnet.Data{}
 	l.output.InitCube(w, h, d)
+
+	log.Println("init layer: softmax, input sizes:", w, h, d, "output sizes:", w, h, d)
 
 	return w, h, d
 }

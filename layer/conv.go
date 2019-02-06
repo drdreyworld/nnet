@@ -1,11 +1,12 @@
 package layer
 
 import (
+	"encoding/gob"
 	"github.com/drdreyworld/nnet"
+	"log"
 	"math"
 	"math/rand"
 	"time"
-	"encoding/gob"
 )
 
 const LAYER_CONV = "conv"
@@ -40,7 +41,6 @@ type Conv struct {
 	gradBiases  *nnet.Data
 	gradInputs  *nnet.Data
 }
-
 
 func (l *Conv) GetType() string {
 	return LAYER_CONV
@@ -81,6 +81,13 @@ func (l *Conv) InitDataSizes(w, h, d int) (int, int, int) {
 
 	l.gradInputs = &nnet.Data{}
 	l.gradInputs.InitCube(l.iWidth, l.iHeight, l.iDepth)
+
+	log.Println("init layer: conv,",
+		"input sizes:", w, h, d,
+		"output sizes:", l.oWidth, l.oHeight, l.oDepth,
+		"matrix sizes:", l.FWidth, "x", l.FHeight,
+		"count:", l.FCount,
+	)
 
 	return l.oWidth, l.oHeight, l.oDepth
 }

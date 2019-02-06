@@ -1,8 +1,9 @@
 package layer
 
 import (
-	"github.com/drdreyworld/nnet"
 	"encoding/gob"
+	"github.com/drdreyworld/nnet"
+	"log"
 )
 
 const LAYER_POOLING = "pooling"
@@ -47,6 +48,8 @@ func (l *Pooling) InitDataSizes(w, h, d int) (int, int, int) {
 
 	l.output = &nnet.Data{}
 	l.output.InitCube(l.oWidth, l.oHeight, l.oDepth)
+
+	log.Println("init layer: pooling, input sizes:", w, h, d, "output sizes:", l.oWidth, l.oHeight, l.oDepth)
 
 	return l.oWidth, l.oHeight, l.oDepth
 }

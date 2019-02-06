@@ -1,11 +1,12 @@
 package layer
 
 import (
+	"encoding/gob"
 	"github.com/drdreyworld/nnet"
+	"log"
 	"math"
 	"math/rand"
 	"time"
-	"encoding/gob"
 )
 
 const LAYER_DENSE = "dense"
@@ -65,6 +66,8 @@ func (l *Dense) InitDataSizes(w, h, d int) (oW, oH, oD int) {
 
 	l.gradWeights = &nnet.Data{}
 	l.gradWeights.InitHiperCube(l.IWidth, l.IHeight, l.IDepth, l.OWidth*l.OHeight*l.ODepth)
+
+	log.Println("init layer: dense, input sizes:", w, h, d, "output sizes:", l.OWidth, l.OHeight, l.ODepth)
 
 	return l.OWidth, l.OHeight, l.ODepth
 }

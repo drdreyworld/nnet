@@ -1,8 +1,8 @@
 package loss
 
 import (
-	"math"
 	"github.com/drdreyworld/nnet"
+	"math"
 )
 
 const LOSS_REGRESSION = "regression"
@@ -13,8 +13,7 @@ func init() {
 
 func Regression(target, result *nnet.Data) (res float64) {
 	for i := 0; i < len(target.Data); i++ {
-		res += math.Pow(result.Data[i]-target.Data[i], 2)
+		res += math.Pow(float64(result.Data[i]-target.Data[i]), 2)
 	}
-	return 0.5 * res
+	return float64(1/len(target.Data)) * res
 }
-

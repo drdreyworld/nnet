@@ -29,6 +29,7 @@ type Pooling struct {
 
 	inputs *nnet.Data
 	output *nnet.Data
+	coords []int
 }
 
 func (l *Pooling) GetType() string {
@@ -49,6 +50,8 @@ func (l *Pooling) InitDataSizes(w, h, d int) (int, int, int) {
 	l.output = &nnet.Data{}
 	l.output.InitCube(l.oWidth, l.oHeight, l.oDepth)
 
+	l.coords = make([]int, l.oWidth*l.oHeight*l.oDepth)
+
 	log.Println("init layer: pooling, input sizes:", w, h, d, "output sizes:", l.oWidth, l.oHeight, l.oDepth)
 
 	return l.oWidth, l.oHeight, l.oDepth
@@ -56,6 +59,8 @@ func (l *Pooling) InitDataSizes(w, h, d int) (int, int, int) {
 
 func (l *Pooling) Activate(inputs *nnet.Data) *nnet.Data {
 	l.inputs = inputs
+	l.output.Fill(0)
+	l.coords = make([]int, l.oWidth*l.oHeight*l.oDepth)
 
 	wW, wH := l.FWidth, l.FHeight
 
@@ -63,22 +68,33 @@ func (l *Pooling) Activate(inputs *nnet.Data) *nnet.Data {
 	iSquare := l.iWidth * l.iHeight
 
 	max := 0.0
+	maxCoord := 0
 	for oz := 0; oz < l.oDepth; oz++ {
 		for oy := 0; oy < l.oHeight; oy++ {
-			for ox := 0; ox < l.oWidth; ox, outXYZ = ox+1, outXYZ+1 {
+			for ox := 0; ox < l.oWidth; ox++ {
 
-				for fy, iy := 0, oy*l.FStride-l.FPadding; fy < wH; fy, iy = fy+1, iy+1 {
-					for fx, ix := 0, ox*l.FStride-l.FPadding; iy > -1 && iy < l.iHeight && fx < wW; fx, ix = fx+1, ix+1 {
-						if ix > -1 && ix < l.iWidth {
+				iy, n := oy*l.FStride-l.FPadding, true
+
+				for fy := 0; fy < wH; fy++ {
+					ix := ox*l.FStride - l.FPadding
+					for fx := 0; fx < wW; fx++ {
+						if ix > -1 && ix < l.iWidth && iy > -1 && iy < l.iHeight {
 							inXYZ := oz*iSquare + iy*l.iWidth + ix
-							if (fy == 0 && fx == 0) || max < l.inputs.Data[inXYZ] {
-								max = l.inputs.Data[inXYZ]
+
+							if n || max < l.inputs.Data[inXYZ] {
+								max, maxCoord, n = l.inputs.Data[inXYZ], inXYZ, false
 							}
 						}
+
+						ix++
 					}
+					iy++
 				}
 
 				l.output.Data[outXYZ] = max
+				l.coords[outXYZ] = maxCoord
+
+				outXYZ++
 			}
 		}
 	}
@@ -88,34 +104,9 @@ func (l *Pooling) Activate(inputs *nnet.Data) *nnet.Data {
 func (l *Pooling) Backprop(deltas *nnet.Data) (gradient *nnet.Data) {
 	gradient = l.inputs.CopyZero()
 
-	wW, wH := l.FWidth, l.FHeight
-
-	outXYZ := 0
-	iSquare := l.iWidth * l.iHeight
-
-	for oz := 0; oz < l.oDepth; oz++ {
-		for oy := 0; oy < l.oHeight; oy++ {
-			for ox := 0; ox < l.oWidth; ox++ {
-				max, giXYZ := 0.0, 0
-
-				for fy, iy := 0, oy*l.FStride-l.FPadding; fy < wH; fy, iy = fy+1, iy+1 {
-					for fx, ix := 0, ox*l.FStride-l.FPadding; iy > -1 && iy < l.iHeight && fx < wW; fx, ix = fx+1, ix+1 {
-						if ix > -1 && ix < l.iWidth {
-							inXYZ := oz*iSquare + iy*l.iWidth + ix
-							if (fy == 0 && fx == 0) || max < l.inputs.Data[inXYZ] {
-								max, giXYZ = l.inputs.Data[inXYZ], inXYZ
-							}
-						}
-					}
-				}
-
-				gradient.Data[giXYZ] = deltas.Data[outXYZ]
-
-				outXYZ++
-			}
-		}
+	for i := 0; i < len(deltas.Data); i++ {
+		gradient.Data[l.coords[i]] += deltas.Data[i]
 	}
-
 	return
 }
 

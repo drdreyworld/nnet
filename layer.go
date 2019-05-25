@@ -14,4 +14,6 @@ type TrainableLayer interface {
 	ResetGradients()
 	GetWeightsWithGradient() (w, g *Data)
 	GetBiasesWithGradient() (w, g *Data)
+	GetInputGradients() (g *Data)
+	Mutable() bool
 }

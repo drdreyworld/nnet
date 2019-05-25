@@ -1,6 +1,8 @@
 package trainer
 
-import "github.com/drdreyworld/nnet"
+import (
+	"github.com/drdreyworld/nnet"
+)
 
 type VanillaSGDExt struct {
 	Network nnet.Net
@@ -49,9 +51,15 @@ func (t *VanillaSGDExt) UpdateWeights() {
 	for i := 0; i < t.Network.GetLayersCount(); i++ {
 		layer, ok := t.Network.GetLayer(i).(nnet.TrainableLayer)
 		if ok {
+			if !layer.Mutable() {
+				k += 2
+				layer.ResetGradients()
+				continue
+			}
+
 			w, g := layer.GetWeightsWithGradient()
 			for j := 0; j < len(w.Data); j++ {
-				value := t.Gradients[k].Data[j]*t.Momentum + t.Learning*g.Data[j] + t.WeightDecay * w.Data[j]
+				value := t.Gradients[k].Data[j]*t.Momentum + t.Learning*g.Data[j] + t.WeightDecay*w.Data[j]
 
 				w.Data[j] -= value
 				t.Gradients[k].Data[j] = value
@@ -60,7 +68,7 @@ func (t *VanillaSGDExt) UpdateWeights() {
 
 			w, g = layer.GetBiasesWithGradient()
 			for j := 0; j < len(w.Data); j++ {
-				value := t.Gradients[k].Data[j]*t.Momentum + t.Learning*g.Data[j] + t.WeightDecay * w.Data[j]
+				value := t.Gradients[k].Data[j]*t.Momentum + t.Learning*g.Data[j] + t.WeightDecay*w.Data[j]
 
 				w.Data[j] -= value
 				t.Gradients[k].Data[j] = value

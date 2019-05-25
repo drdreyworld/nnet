@@ -1,11 +1,9 @@
 package nnet
 
 import (
-	"errors"
 	"encoding/gob"
+	"errors"
 )
-
-const ERR_NET_NOT_SET_LOSS = "loss function not set"
 
 func init() {
 	gob.Register(NetDefault{})
@@ -56,8 +54,8 @@ func (n *NetDefault) Backprop(deltas *Data) (gradient *Data) {
 }
 
 func (n *NetDefault) GetOutputDeltas(target, output *Data) (res *Data) {
-	res = target.CopyZero()
-	for i := 0; i < len(res.Data); i++ {
+	res = output.CopyZero()
+	for i := 0; i < len(target.Data); i++ {
 		res.Data[i] = -(target.Data[i] - output.Data[i])
 	}
 	return

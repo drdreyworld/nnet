@@ -1,8 +1,8 @@
 package layer
 
 import (
-	"github.com/drdreyworld/nnet"
 	"encoding/gob"
+	"github.com/drdreyworld/nnet"
 )
 
 const LAYER_ACTIVATION = "activation"
@@ -24,7 +24,9 @@ type Activation struct {
 	inputs *nnet.Data
 	output *nnet.Data
 
-	ActFunc string
+	ActFunc   string
+	ActParams interface{}
+
 	actFunc nnet.Activation
 }
 
@@ -39,7 +41,7 @@ func (l *Activation) InitDataSizes(w, h, d int) (int, int, int) {
 	l.output.InitCube(w, h, d)
 
 	if f, ok := nnet.ActivationsRegistry[l.ActFunc]; ok {
-		l.actFunc = f
+		l.actFunc = f(l.ActParams)
 	} else {
 		panic("activation function is not registered:" + l.ActFunc)
 	}

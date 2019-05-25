@@ -4,19 +4,30 @@
 
 version: 0.0.1
 
-Extendable golang neural network library
+Extendable golang neural network library.
 
-Now it can be used for construction feed forward networks (FC and CNN).
+Can be used for construction feed forward networks.
 
-Realized basic layer types:
+Layer types:
 
-	- dense or fully connected layer
-	- convolution layer
-	- pooling layer
-	- activation layer (with target activation function)
-	- softmax layer (as classifier)
+	- FC - multidimentional fully connected layer
+	- Conv - convolution layer
+	- Pool - max pooling layer (downsampling)
+	- Activation - activation layer (with target activation function and specific params for it)
+	- Softmax - multidimentional layer for classification
 
-It is possible to create own:
+Activation functions:
+
+    - Sigmoid
+    - Tanh
+    - ReLU
+    - ELU
+    - LeakyReLU
+    - Softplus
+
+Created and trained network can be saved to (loaded from) json-file.
+
+Library can be extended by creating your own:
 
 	- layer type
 	- activation function

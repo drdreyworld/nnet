@@ -1,17 +1,24 @@
 package activation
 
 import (
-	"math"
 	"github.com/drdreyworld/nnet"
+	"math"
 )
 
 const ACTIVATION_SIGMOID = "sigmoid"
 
 func init() {
-	nnet.ActivationsRegistry[ACTIVATION_SIGMOID] = &ActivationSigmoid{}
+	nnet.ActivationsRegistry[ACTIVATION_SIGMOID] = func(params interface{}) nnet.Activation {
+		r := &ActivationSigmoid{}
+		r.SetParams(params)
+		return r
+	}
 }
 
 type ActivationSigmoid struct{}
+
+func (a *ActivationSigmoid) SetParams(interface{}) {
+}
 
 func (a *ActivationSigmoid) Forward(v float64) float64 {
 	return 1 / (1 + math.Exp(-v))

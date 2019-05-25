@@ -1,8 +1,8 @@
 package loss
 
 import (
-	"math"
 	"github.com/drdreyworld/nnet"
+	"math"
 )
 
 const LOSS_CLASSIFICATION = "classification"
@@ -19,4 +19,3 @@ func Classification(target, result *nnet.Data) (res float64) {
 	}
 	return 0
 }
-

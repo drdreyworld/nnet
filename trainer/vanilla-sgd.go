@@ -25,7 +25,7 @@ func (t *VanilaSGD) Activate(inputs, target *nnet.Data) *nnet.Data {
 func (t *VanilaSGD) UpdateWeights() {
 	for i := 0; i < t.Network.GetLayersCount(); i++ {
 		layer, ok := t.Network.GetLayer(i).(nnet.TrainableLayer)
-		if ok {
+		if ok && layer.Mutable() {
 			w, g := layer.GetWeightsWithGradient()
 			for i := 0; i < len(w.Data); i++ {
 				w.Data[i] -= t.Learning * g.Data[i]

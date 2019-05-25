@@ -1,17 +1,24 @@
 package activation
 
 import (
-	"math"
 	"github.com/drdreyworld/nnet"
+	"math"
 )
 
 const ACTIVATION_SOFTPLUS = "softplus"
 
 func init() {
-	nnet.ActivationsRegistry[ACTIVATION_SOFTPLUS] = &ActivationSoftPlus{}
+	nnet.ActivationsRegistry[ACTIVATION_SOFTPLUS] = func(params interface{}) nnet.Activation {
+		r := &ActivationSoftPlus{}
+		r.SetParams(params)
+		return r
+	}
 }
 
 type ActivationSoftPlus struct{}
+
+func (a *ActivationSoftPlus) SetParams(interface{}) {
+}
 
 func (a *ActivationSoftPlus) Forward(v float64) float64 {
 	return math.Log10(1 / (1 + math.Exp(v)))

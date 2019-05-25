@@ -14,6 +14,12 @@ type Data struct {
 	Data []float64
 }
 
+func (m *Data) Reset() {
+	for i := 0; i < len(m.Data); i++ {
+		m.Data[i] = 0
+	}
+}
+
 func (m *Data) Fill(v float64) {
 	for i := 0; i < len(m.Data); i++ {
 		m.Data[i] = v
@@ -92,6 +98,12 @@ func (m *Data) RotateMatrixesInCube() {
 	return
 }
 
+func (m *Data) RotateMatrix(index int) {
+	l := m.Dims[0] * m.Dims[1]
+	m.Rotate(index*l, (index+1)*l)
+	return
+}
+
 func (m *Data) Rotate(from, to int) {
 	for i := 0; from+i < to-i-1; i++ {
 		m.Data[from+i], m.Data[to-i-1] = m.Data[to-i-1], m.Data[from+i]
@@ -109,4 +121,22 @@ func (m *Data) GetMinMaxValues(fromIndex, toIndex int) (min, max float64) {
 		}
 	}
 	return
+}
+
+func (m *Data) GetMatrix(index int) *Data {
+	square := m.Dims[0] * m.Dims[1]
+	result := new(Data)
+	result.Dims = []int{m.Dims[0], m.Dims[1], 1}
+	result.Data = m.Data[index*square : (index+1)*square]
+
+	return result
+}
+
+func (m *Data) GetTensor(index, depth int) *Data {
+	cube := m.Dims[0] * m.Dims[1] * depth
+	result := new(Data)
+	result.Dims = []int{m.Dims[0], m.Dims[1], depth}
+	result.Data = m.Data[index*cube : (index+1)*cube]
+
+	return result
 }

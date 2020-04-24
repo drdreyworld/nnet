@@ -1,19 +1,26 @@
 package nnet
 
+import "github.com/drdreyworld/nnet/data"
+
 type Layer interface {
 	InitDataSizes(w, h, d int) (int, int, int)
 
-	Activate(inputs *Data) (output *Data)
-	Backprop(deltas *Data) (nextDeltas *Data)
-
-	GetOutput() *Data
-	GetType() string
+	Activate(inputs *data.Data) (output *data.Data)
+	Backprop(deltas *data.Data) (nextDeltas *data.Data)
 }
 
-type TrainableLayer interface {
-	ResetGradients()
-	GetWeightsWithGradient() (w, g *Data)
-	GetBiasesWithGradient() (w, g *Data)
-	GetInputGradients() (g *Data)
-	Mutable() bool
+type LayerWithOutput interface {
+	GetOutput() *data.Data
+}
+
+type LayerWithWeights interface {
+	GetWeights() *data.Data
+}
+
+type LayerWithBiases interface {
+	GetBiases() *data.Data
+}
+
+type LayerWithGradients interface {
+	GetInputGradients() *data.Data
 }

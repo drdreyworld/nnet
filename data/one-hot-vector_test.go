@@ -125,3 +125,19 @@ func TestNewOneHotVectors(t *testing.T) {
 		})
 	}
 }
+
+func TestMustCompileOneHotVectors(t *testing.T) {
+	t.Run("WithPanic", func(t *testing.T) {
+		assert.PanicsWithError(t, "0 less than one: vector count to low", func() {
+			MustCompileOneHotVectors(0)
+		})
+	})
+
+	t.Run("NoPanic", func(t *testing.T) {
+		assert.Equal(t, []*Data{
+			{Dims: []int{3, 1, 1}, Data: []float64{1, 0, 0}},
+			{Dims: []int{3, 1, 1}, Data: []float64{0, 1, 0}},
+			{Dims: []int{3, 1, 1}, Data: []float64{0, 0, 1}},
+		}, MustCompileOneHotVectors(3))
+	})
+}

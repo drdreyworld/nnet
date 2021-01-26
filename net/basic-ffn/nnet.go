@@ -3,7 +3,6 @@ package basic_ffn
 import (
 	"github.com/drdreyworld/nnet"
 	"github.com/drdreyworld/nnet/data"
-	"log"
 )
 
 type Layers []nnet.Layer
@@ -26,15 +25,11 @@ type ffnet struct {
 
 func (n *ffnet) Init() (err error) {
 	w, h, d := n.iWidth, n.iHeight, n.iDepth
-
-	log.Printf("input [*]: %d:%d:%d, %T", w, h, d, n)
 	for i := 0; i < len(n.Layers); i++ {
 		w, h, d = n.Layers[i].InitDataSizes(w, h, d)
-		log.Printf("layer [%d]: %d:%d:%d, %T", i, w, h, d, n.Layers[i])
 	}
 
 	n.oWidth, n.oHeight, n.oDepth = w, h, d
-
 	return
 }
 
